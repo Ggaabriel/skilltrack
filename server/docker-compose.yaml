@@ -1,0 +1,23 @@
+services:
+  # База данных PostgreSQL
+  db:
+    image: postgres:15
+    container_name: skilltrack_db
+    env_file:
+      - .env
+    ports:
+      - "5432:5432" # Проброс порта для доступа с хоста
+    restart: unless-stopped
+
+  # pgAdmin для управления PostgreSQL через браузер
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: skilltrack_pgadmin
+    env_file:
+      - .env
+    ports:
+      - "4040:80" # Доступ к pgAdmin через http://localhost:5050
+    depends_on:
+      - db
+    restart: unless-stopped
+    # Для pgAdmin хост базы данных — имя сервиса db
