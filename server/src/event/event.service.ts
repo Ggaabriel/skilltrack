@@ -9,7 +9,6 @@ const select = {
   startDate: true,
   endDate: true,
   color: true,
-  userId: true,
 };
 @Injectable()
 export class EventService {

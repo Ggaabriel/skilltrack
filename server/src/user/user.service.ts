@@ -1,18 +1,30 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
-
+import * as bcrypt from 'bcrypt';
 const select = { id: true, email: true, name: true, picturePath: true };
 
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async hashPassword(password: string): Promise<string> {
+    const saltRounds = 10;
+    return await bcrypt.hash(password, saltRounds);
+  }
+
   async create(createUserDto: CreateUserDto) {
-    const user = await this.prisma.user.create({ select, data: createUserDto });
-    return {
-      data: user,
+    const data = {
+      ...createUserDto,
+      password: await this.hashPassword(createUserDto.password),
     };
+    const user = await this.prisma.user.create({
+      select,
+      data,
+    });
+
+    return user;
   }
 
   async findAll(page: number = 1, limit: number = 10) {
@@ -25,14 +37,8 @@ export class UserService {
       }),
       this.prisma.user.count(),
     ]);
-    return {
-      data: users,
-      meta: {
-        total,
-        page,
-        lastPage: Math.ceil(total / limit),
-      },
-    };
+
+    return { users, total, page, limit };
   }
 
   async findOne(id: number) {
@@ -40,14 +46,20 @@ export class UserService {
       where: { id },
       select,
     });
-    if (!user) {
-      return {
-        data: null,
-      };
-    }
-    return {
-      data: user,
-    };
+
+    if (!user) throw new NotFoundException('User not found');
+
+    return user;
+  }
+
+  async findByEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    return user;
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
@@ -56,15 +68,13 @@ export class UserService {
       data: updateUserDto,
       select,
     });
-    return {
-      data: user,
-    };
+
+    return user;
   }
 
   async remove(id: number) {
     const user = await this.prisma.user.delete({ where: { id }, select });
-    return {
-      data: user,
-    };
+
+    return user;
   }
 }

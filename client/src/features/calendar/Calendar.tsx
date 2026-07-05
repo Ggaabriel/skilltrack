@@ -1,21 +1,24 @@
-import { CalendarBody } from "@/features/calendar/ui/calendar-body"
-import { CalendarProvider } from "@/features/calendar/model/contexts/calendar-context"
-import { DndProvider } from "@/features/calendar/model/contexts/dnd-context"
-import { CalendarHeader } from "@/features/calendar/ui/header/calendar-header"
-import { getEvents, getUsers } from "@/features/calendar/api/requests"
+import { CalendarBody } from "@/features/calendar/ui/calendar-body";
+import { CalendarProvider } from "@/features/calendar/model/contexts/calendar-context";
+import { DndProvider } from "@/features/calendar/model/contexts/dnd-context";
+import { CalendarHeader } from "@/features/calendar/ui/header/calendar-header";
+import { useEventsQuery } from "./api/event.queries";
 
-async function getCalendarData() {
-  return {
-    events: await getEvents(),
-    users: await getUsers(),
-  }
-}
+export function Calendar() {
+  // const events: IEvent[] = [{
+  //   id: 1,
+  //   title: "Event 1",
+  //   startDate: "2026-06-04T10:00:00",
+  //   endDate: "2026-06-04T11:00:00",
+  //   color: "blue",
+  //   description: "Event 1 description"
+  // }]
 
-export async function Calendar() {
-  const { events, users } = await getCalendarData()
+  const eventsQuery = useEventsQuery("2021-01-01", "2027-01-01");
+  console.log(eventsQuery.data);
 
   return (
-    <CalendarProvider events={events} users={users} view="month">
+    <CalendarProvider events={eventsQuery.data?.data ?? []} view="month">
       <DndProvider>
         <div className="w-full rounded-xl">
           <CalendarHeader />
@@ -23,5 +26,5 @@ export async function Calendar() {
         </div>
       </DndProvider>
     </CalendarProvider>
-  )
+  );
 }

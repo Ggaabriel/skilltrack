@@ -1,7 +1,7 @@
 "use client"
 
 import { format, parseISO } from "date-fns"
-import { Calendar, Clock, Text, User } from "lucide-react"
+import { Calendar, Clock, Text } from "lucide-react"
 import type { ReactNode } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -48,7 +48,8 @@ export function EventDetailsDialog({ event, children }: IProps) {
 
         <ScrollArea className="max-h-[80vh]">
           <div className="space-y-4 p-4">
-            <div className="flex items-start gap-2">
+            {/* In this version of the calendar app, events are not associated with specific users, only with 1 user. */}
+            {/* <div className="flex items-start gap-2">
               <User className="mt-1 size-4 shrink-0 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Responsible</p>
@@ -56,7 +57,7 @@ export function EventDetailsDialog({ event, children }: IProps) {
                   {event.user.name}
                 </p>
               </div>
-            </div>
+            </div> */}
 
             <div className="flex items-start gap-2">
               <Calendar className="mt-1 size-4 shrink-0 text-muted-foreground" />

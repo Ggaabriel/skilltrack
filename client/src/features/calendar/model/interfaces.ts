@@ -16,7 +16,6 @@ export interface IEvent {
   title: string
   color: TEventColor
   description: string
-  user: IUser
 }
 
 export interface ICalendarCell {
@@ -40,8 +39,6 @@ export interface ICalendarContext {
   setBadgeVariant: (variant: "dot" | "colored") => void
   selectedColors: TEventColor[]
   filterEventsBySelectedColors: (colors: TEventColor) => void
-  filterEventsBySelectedUser: (userId: IUser["id"] | "all") => void
-  users: IUser[]
   events: IEvent[]
   addEvent: (event: IEvent) => void
   updateEvent: (event: IEvent) => void

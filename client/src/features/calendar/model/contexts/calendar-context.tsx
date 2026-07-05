@@ -24,13 +24,11 @@ const DEFAULT_SETTINGS: CalendarSettings = {
 
 export function CalendarProvider({
   children,
-  users,
   events,
   badge = "colored",
   view = "day",
 }: {
   children: React.ReactNode
-  users: IUser[]
   events: IEvent[]
   view?: TCalendarView
   badge?: "dot" | "colored"
@@ -113,15 +111,15 @@ export function CalendarProvider({
     setSelectedColors(newColors)
   }
 
-  const filterEventsBySelectedUser = (userId: IUser["id"] | "all") => {
-    setSelectedUserId(userId)
-    if (userId === "all") {
-      setFilteredEvents(allEvents)
-    } else {
-      const filtered = allEvents.filter((event) => event.user.id === userId)
-      setFilteredEvents(filtered)
-    }
-  }
+  // const filterEventsBySelectedUser = (userId: IUser["id"] | "all") => {
+  //   setSelectedUserId(userId)
+  //   if (userId === "all") {
+  //     setFilteredEvents(allEvents)
+  //   } else {
+  //     const filtered = allEvents.filter((event) => event.user.id === userId)
+  //     setFilteredEvents(filtered)
+  //   }
+  // }
 
   const handleSelectDate = (date: Date | undefined) => {
     if (!date) return
@@ -164,10 +162,8 @@ export function CalendarProvider({
     setSelectedUserId,
     badgeVariant,
     setBadgeVariant,
-    users,
     selectedColors,
     filterEventsBySelectedColors,
-    filterEventsBySelectedUser,
     events: filteredEvents,
     view: currentView,
     use24HourFormat,

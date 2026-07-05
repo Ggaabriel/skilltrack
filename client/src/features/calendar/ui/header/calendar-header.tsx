@@ -14,7 +14,6 @@ import { AddEditEventDialog } from "@/features/calendar/ui/dialogs/add-edit-even
 import { DateNavigator } from "@/features/calendar/ui/header/date-navigator"
 import FilterEvents from "@/features/calendar/ui/header/filter"
 import { TodayButton } from "@/features/calendar/ui/header/today-button"
-import { UserSelect } from "@/features/calendar/ui/header/user-select"
 import { Settings } from "@/features/calendar/ui/settings/settings"
 import Views from "./view-tabs"
 
@@ -47,7 +46,8 @@ export function CalendarHeader() {
         </div>
 
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-1.5">
-          <UserSelect />
+          {/* In this version of the calendar app, events are not associated with specific users, only with 1 user. */}
+          {/* <UserSelect /> */}
 
           <AddEditEventDialog>
             <Button>

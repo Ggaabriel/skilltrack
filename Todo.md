@@ -21,32 +21,16 @@
 
 ### Backend
 ---------------------------------
-#### [x] - создать таблицу events
-  - id
-  - title
-  - description
-  - start
-  - end
-  - allDay
-  - userId
-  - updatedAt
-  - createdAt
-  - ...(пока не знаю какие еще есть поля в библиотечном календаре)
-#### [x] - endpoint POST /user by body userId
-#### [x] - endpoint GET /user?userId
-#### [x] - endpoint PATCH /user by body id
-#### [x] - endpoint DELETE /user by body id
-#### [x] - endpoint POST /event by body userId
-#### [x] - endpoint GET /event?userId
-#### [x] - endpoint PATCH /event by body id
-#### [x] - endpoint DELETE /event by body id
-#### [x] - обработка ошибок
-  #### [x] - prisma exception filter
-  #### [x] - валидация HttpExceptionFilter
-  #### [x] - типизация без any
-  #### [x] - обработка поиска несуществующего пользователя
-  #### [x] - обработка ошибок events
-  #### [x] - уменьшить валидатион пайп
+#### - [x] 1. Вынести работу с токенами в отдельный сервис
+#### - [x] 2. Вынести работу с сессиями в отдельный сервис
+#### - [x] 3. Сделать refresh strategy
+#### - [x] 4. Сделать проверку сессий (валидация/expiry/ревокация)
+#### - [x] 5. Factory для стандартизации API ответа
+#### - [] 6. Очистка просроченных refresh-токенов
+#### - [] 7. Вынести response logic из auth.controller в отдельный сервис
+#### - [] 8. Local strategy
+#### - [] 9. 
+#### - [] 10. 
 ### Frontend
 -----------------------------
 #### [x] - добавить календарь
