@@ -3,12 +3,15 @@ import {
   Catch,
   ArgumentsHost,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { Prisma } from 'src/generated/prisma/client';
 
 @Catch(Prisma.PrismaClientKnownRequestError, Prisma.PrismaClientValidationError)
 export class PrismaExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(PrismaExceptionFilter.name);
+
   private logAndSendResponse(
     statusCode: HttpStatus,
     message: { cause?: string; target?: string; modelName?: string } | string,
@@ -30,6 +33,14 @@ export class PrismaExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const defaultMessage = exception.message.replace(/\n/g, '');
     const { code } = exception;
+
+    this.logger.error('Prisma exception caught', {
+      code,
+      message: defaultMessage,
+      stack: exception.stack,
+      meta: exception.meta,
+    });
+
     let message: string;
     switch (code) {
       case 'P2002':

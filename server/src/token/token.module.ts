@@ -4,11 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   providers: [TokenService],
-  imports: [
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'default_secret_key',
-    }),
-  ],
+  imports: [JwtModule.register({})],
   exports: [TokenService],
 })
 export class TokenModule {}

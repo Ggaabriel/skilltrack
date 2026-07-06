@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -8,7 +9,8 @@ import { CustomValidationPipe } from './common/pipes/custom-validation/custom-va
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
+  const app = await NestFactory.create(AppModule, { logger });
   app.enableCors();
   app.use(cookieParser());
   app.useGlobalInterceptors(new ResponseInterceptor());
@@ -28,11 +30,12 @@ async function bootstrap() {
       withCredentials: true,
     },
   });
-  await app.listen(3001);
-  console.log(`Server running at http://localhost:3000`);
+  await app.listen(3000);
+  logger.log('Server running', { url: 'http://localhost:3000' });
 }
 
 bootstrap().catch((error) => {
-  console.error('Failed to start server', error);
+  const logger = new Logger('Bootstrap');
+  logger.error('Failed to start server', error);
   process.exit(1);
 });

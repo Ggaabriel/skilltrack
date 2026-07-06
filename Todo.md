@@ -27,8 +27,8 @@
 #### - [x] 4. Сделать проверку сессий (валидация/expiry/ревокация)
 #### - [x] 5. Factory для стандартизации API ответа
 #### - [] 6. Очистка просроченных refresh-токенов
-#### - [] 7. Вынести response logic из auth.controller в отдельный сервис
-#### - [] 8. Local strategy
+#### - [x] 7. Вынести response logic из auth.controller в отдельный сервис
+#### - [x] 8. Local strategy
 #### - [] 9. 
 #### - [] 10. 
 ### Frontend

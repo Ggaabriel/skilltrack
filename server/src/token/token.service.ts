@@ -1,14 +1,19 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { jwtConfig } from 'src/config/jwt.config';
+import { JwtConfig } from 'src/config/jwt.config';
 import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class TokenService {
-  constructor(private readonly jwtService: JwtService) {}
+  private readonly jwt: JwtConfig;
 
-  private readonly accessTokenExpiresIn = jwtConfig.accessTokenExpiresIn;
-  private readonly refreshTokenExpiresIn = jwtConfig.refreshTokenExpiresIn;
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {
+    this.jwt = this.configService.getOrThrow<JwtConfig>('jwt');
+  }
 
   generateAccessToken(user: Omit<User, 'password'>) {
     return {
@@ -18,7 +23,8 @@ export class TokenService {
           email: user.email,
         },
         {
-          expiresIn: this.accessTokenExpiresIn / 1000, // Convert milliseconds to seconds
+          secret: this.jwt.accessSecret,
+          expiresIn: this.jwt.accessExpiresIn / 1000, // Convert milliseconds to seconds
         },
       ),
     };
@@ -31,7 +37,10 @@ export class TokenService {
           userId: user.id,
           sessionId,
         },
-        { expiresIn: this.refreshTokenExpiresIn / 1000 }, // Convert milliseconds to seconds
+        {
+          secret: this.jwt.refreshSecret,
+          expiresIn: this.jwt.refreshExpiresIn / 1000, // Convert milliseconds to seconds
+        },
       ),
     };
   }
