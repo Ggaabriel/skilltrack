@@ -84,7 +84,16 @@ export function reportApiError(
   err: ApiError,
   context?: Record<string, unknown>,
 ): void {
-  const payload = { ...context, status: err.status, code: err.code };
+  if (context?.handled === true) {
+    return;
+  }
+
+  const payload = {
+    ...context,
+    status: err.status,
+    code: err.code,
+  };
+
   const layer = ERROR_CONFIG[err.code]?.layer ?? "bug";
 
   if (layer === "expected") {

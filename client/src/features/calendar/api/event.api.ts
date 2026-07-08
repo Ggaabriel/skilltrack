@@ -1,5 +1,6 @@
-import { httpClient, type ApiResponse } from "@/shared/api/client";
+import { httpClient } from "@/shared/api";
 import type { IEvent } from "../model/interfaces";
+import type { ApiResponse } from "@/shared/api/client";
 
 /**
  * Event API endpoints

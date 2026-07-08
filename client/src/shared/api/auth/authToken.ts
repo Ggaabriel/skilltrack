@@ -1,4 +1,4 @@
-const AUTH_TOKEN_STORAGE_KEY = "skilltrack_auth_token";
+const AUTH_TOKEN_STORAGE_KEY = "accessToken";
 
 function isBrowser(): boolean {
   return typeof window !== "undefined" && typeof localStorage !== "undefined";
