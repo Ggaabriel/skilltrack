@@ -1,9 +1,8 @@
-import { env } from "../config/env";
 import { reportApiError, toApiError } from "./error";
-import { authTokenStore } from "./auth/authToken";
+import { runInterceptors, type Interceptor } from "./interceptors";
 import { buildRequest } from "./request";
-import { sendRequest } from "./transport";
 import { parseResponse } from "./response";
+import type { Transport } from "./transport";
 
 /**
  * Standard API response format
@@ -19,6 +18,7 @@ export type ApiResponse<T> = {
     lastPage?: number;
   };
 };
+
 export interface HttpClientOptions {
   baseURL?: string;
   refreshPath?: string;
@@ -27,81 +27,56 @@ export interface HttpClientOptions {
 }
 
 type JsonBody = Record<string, unknown> | unknown[];
-
+type HttpBody = JsonBody | BodyInit | null;
 export interface HttpInit extends Omit<RequestInit, "body"> {
-  body?: JsonBody | BodyInit | null;
+  body?: HttpBody;
 }
 
 export interface HttpClient {
-  request<T = unknown>(path: string, init?: HttpInit): Promise<T | undefined>;
-  get<T = unknown>(path: string, init?: HttpInit): Promise<T | undefined>;
-  post<T = unknown>(
-    path: string,
-    body?: BodyInit,
-    init?: HttpInit,
-  ): Promise<T | undefined>;
+  request<T = unknown>(path: string, init?: HttpInit): Promise<T>;
+  get<T = unknown>(path: string, init?: HttpInit): Promise<T>;
+  post<T = unknown>(path: string, body?: HttpBody, init?: HttpInit): Promise<T>;
   patch<T = unknown>(
     path: string,
-    body?: BodyInit,
+    body?: HttpBody,
     init?: HttpInit,
-  ): Promise<T | undefined>;
-  delete<T = unknown>(path: string, init?: HttpInit): Promise<T | undefined>;
+  ): Promise<T>;
+  delete<T = unknown>(path: string, init?: HttpInit): Promise<T>;
 }
-const DEFAULT_BASE_URL = env.VITE_API_BASE_URL;
+export interface RequestContext {
+  url: string;
+  init: RequestInit;
 
-// async function failWith(
-//   response: Response,
-//   url: string,
-//   extra?: Record<string, unknown>,
-// ): Promise<never> {
-//   const err = await toApiError(response);
-//   reportApiError(err, { url, ...extra });
-//   throw err;
-// }
+  retry?: boolean;
 
-export function createHttpClient(options: HttpClientOptions = {}): HttpClient {
-  const baseURL = options.baseURL ?? DEFAULT_BASE_URL;
+  metadata?: Record<string, unknown>;
+}
 
-  async function request<T>(
-    path: string,
-    init: HttpInit = {},
-    // isRetry = false,
-  ): Promise<T | undefined> {
-    const token = authTokenStore.get();
+export function createHttpClient({
+  options = {},
+  interceptors,
+  transport,
+}: {
+  options?: HttpClientOptions;
+  interceptors: Interceptor[];
+  transport: Transport;
+}): HttpClient {
+  const baseURL = options.baseURL;
 
-    const requestInit = buildRequest(init, token);
+  async function request<T>(path: string, init: HttpInit = {}): Promise<T> {
+    const ctx: RequestContext = {
+      url: baseURL + path,
+      init: buildRequest(init),
+    };
 
-    const url = baseURL + path;
-
-    const response = await sendRequest(url, requestInit);
-
-    // if (response.status === 401 && !isRetry) {
-    //   await refreshToken();
-
-    //   return request<T>(path, init, true);
-    // }
-
-    // И не вызывай reportApiError до этого места.
-
-    // То есть порядок должен быть:
-
-    // const response = await sendRequest(...);
-
-    // if (401) {
-    //     refresh();
-    // }
-
-    // if (!response.ok) {
-    //     toApiError();
-    //     reportApiError();
-    //     throw error;
-    // }
-
+    const response = await runInterceptors(ctx, interceptors, () =>
+      transport(ctx.url, ctx.init),
+    );
     if (!response.ok) {
       const error = await toApiError(response);
 
       reportApiError(error, {
-        url,
+        url: ctx.url,
       });
 
       throw error;

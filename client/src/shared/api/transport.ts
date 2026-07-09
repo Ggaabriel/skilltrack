@@ -1,5 +1,6 @@
 import { ApiError, reportApiError } from './error';
 
+export type Transport = (url: string, init: RequestInit) => Promise<Response>;
 export async function sendRequest(
   url: string,
   init: RequestInit,

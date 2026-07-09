@@ -10,7 +10,6 @@ export interface RefresherOptions {
 const RefreshResponseSchema = z.object({
   accessToken: z.string().min(1),
 });
-const DEFAULT_REFRESH_PATH = "/auth/refresh";
 
 export function createRefresher(
   options: RefresherOptions,
@@ -65,42 +64,4 @@ export function createRefresher(
 
     return inflightRequest;
   };
-}
-
-const refresh =
-  options.refresh ??
-  createRefresher({
-    baseURL,
-    path: options.refreshPath ?? DEFAULT_REFRESH_PATH,
-  });
-const onUnauthorized = options.onUnauthorized ?? (() => authTokenStore.clear());
-
-export async function isAccess(
-  ctx,
-  response,
-  isRetry,
-  handleUnauthorized,
-  request: (path, init, isRetry: boolean) => Promise<T>,
-  path,
-  init,
-) {
-  if (response.status === 401 && !isRetry) {
-    return handleUnauthorized(response, ctx, () =>
-      request<T>(path, init, true),
-    );
-  }
-}
-
-async function handleUnauthorized<T>(
-  response: Response,
-  ctx: ApiRequest,
-  retry: () => Promise<T>,
-): Promise<T> {
-  try {
-    await refresh();
-  } catch {
-    onUnauthorized();
-    await failWith(response, ctx, { retryFailed: true });
-  }
-  return retry();
 }

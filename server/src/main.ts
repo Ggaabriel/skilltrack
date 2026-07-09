@@ -11,7 +11,7 @@ import cookieParser from 'cookie-parser';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule, { logger });
-  app.enableCors();
+  app.enableCors({ origin: 'http://localhost:5173', credentials: true });
   app.use(cookieParser());
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new PrismaExceptionFilter(), new HttpExceptionFilter());

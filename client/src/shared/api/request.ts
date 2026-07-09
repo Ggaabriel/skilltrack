@@ -2,10 +2,9 @@ import type { HttpInit } from "./client";
 import { buildHeaders } from "./header";
 import { serializeBody } from "./utils";
 
-export function buildRequest(init: HttpInit = {}, token?: string | null): RequestInit {
+export function buildRequest(init: HttpInit = {}): RequestInit {
   const headers = buildHeaders({
     headers: init.headers,
-    token,
     body: init.body,
   });
 
