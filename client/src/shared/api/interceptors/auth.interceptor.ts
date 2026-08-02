@@ -37,6 +37,8 @@ export function createAuthInterceptor(options: {
 
       return next();
     } catch (error) {
+      console.log("auth interceptor error:" + error);
+
       authTokenStore.clear();
 
       throw error;

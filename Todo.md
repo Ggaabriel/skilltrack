@@ -29,8 +29,8 @@
 
 ### Frontend
 -----------------------------
-#### - [] 1. Добавить сохранение accessToken в httpClient
-#### - [] 2. Добавить refresh в случае 401 кода в httpClient
+#### - [x] 1. Добавить сохранение accessToken в httpClient
+#### - [x] 2. Добавить refresh в случае 401 кода в httpClient
 #### - [] 3. Страница /login 
 #### - [] 4. Страница /register
 #### - [] 5.

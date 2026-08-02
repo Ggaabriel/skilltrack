@@ -21,11 +21,9 @@ export class EventService {
       data: createEventDto,
       select,
     });
-    const response = {
-      data: event,
-    };
+
     this.logger.log('Event created', { eventId: event.id });
-    return response;
+    return event;
   }
   async getUserEvents(userId: number, startDate: string, endDate: string) {
     this.logger.log('Fetching user events', { userId, startDate, endDate });
@@ -47,15 +45,11 @@ export class EventService {
         startDate,
         endDate,
       });
-      return {
-        data: null,
-      };
+      return null;
     }
 
     this.logger.log('User events fetched', { userId, count: events.length });
-    return {
-      data: events,
-    };
+    return events;
   }
 
   async findOne(id: number) {
@@ -66,14 +60,10 @@ export class EventService {
     });
     if (!event) {
       this.logger.warn('Event not found', { eventId: id });
-      return {
-        data: null,
-      };
+      return null;
     }
     this.logger.log('Event found', { eventId: id });
-    return {
-      data: event,
-    };
+    return event;
   }
 
   async update(id: number, updateEventDto: UpdateEventDto) {
@@ -84,9 +74,7 @@ export class EventService {
       select,
     });
     this.logger.log('Event updated', { eventId: id });
-    return {
-      data: event,
-    };
+    return event;
   }
 
   async remove(id: number) {
@@ -96,8 +84,6 @@ export class EventService {
       select,
     });
     this.logger.log('Event removed', { eventId: id });
-    return {
-      data: event,
-    };
+    return event;
   }
 }

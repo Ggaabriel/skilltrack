@@ -18,14 +18,10 @@ import { GetUserEventsDto } from './dto/get-user-events.dto';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
-// const responseContainer = <T extends Record<string, unknown>>(
-//   data: Omit<User, 'password'> | Omit<User, 'password'>[] | null,
-//   options?: T,
-// ) => ({ data, ...options });
-
-// В контроллере больше не нужно писать responseContainer(...)
-//  — можно просто возвращать user, { users, meta },
-// { data: null, message: 'User not found' } и т.п.
+const responseContainer = <T extends Record<string, unknown>>(
+  data: unknown,
+  options?: T,
+) => ({ data, ...options });
 
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
@@ -44,7 +40,7 @@ export class UserController {
     this.logger.log('Create user request', { email: createUserDto.email });
     const user = await this.userService.create(createUserDto);
     this.logger.log('User created', { userId: user.id });
-    return user;
+    return responseContainer(user);
   }
 
   @ApiOperation({ summary: 'Get all users with pagination' })
@@ -59,14 +55,19 @@ export class UserController {
     };
 
     this.logger.log('Found users', { total, page, limit });
-    return { users, meta };
+    return responseContainer(users, meta);
   }
 
   @ApiOperation({ summary: 'Get events for a specific user' })
   @Get(':id/events')
-  findEvents(@Param('id') id: string, @Query() query: GetUserEventsDto) {
+  async findEvents(@Param('id') id: string, @Query() query: GetUserEventsDto) {
     this.logger.log('Get user events request', { userId: id, query });
-    return this.eventService.getUserEvents(+id, query.startDate, query.endDate);
+    const events = await this.eventService.getUserEvents(
+      +id,
+      query.startDate,
+      query.endDate,
+    );
+    return responseContainer(events);
   }
 
   @ApiOperation({ summary: 'Get a specific user by ID' })
@@ -77,11 +78,11 @@ export class UserController {
 
     if (!user) {
       this.logger.warn('User not found', { userId: id });
-      return { data: null, message: 'User not found' };
+      return responseContainer(null, { message: 'User not found' });
     }
 
     this.logger.log('User found', { userId: id });
-    return user;
+    return responseContainer(user);
   }
 
   @ApiOperation({ summary: 'Update a specific user by ID' })
@@ -93,7 +94,7 @@ export class UserController {
     });
     const user = await this.userService.update(+id, updateUserDto);
     this.logger.log('User updated', { userId: id });
-    return user;
+    return responseContainer(user);
   }
 
   @ApiOperation({ summary: 'Delete a specific user by ID' })

@@ -14,6 +14,9 @@ import { NavMain } from "@/components/NavMain";
 import { NavUser } from "@/components/NavUser";
 import { Link } from "react-router";
 import { Routes } from "@/shared/routing/routes";
+import { Button } from "./ui/button";
+import { LogIn } from "lucide-react";
+import { useAuthStore } from "@/app/store/auth.store";
 
 const data = {
   user: {
@@ -31,12 +34,17 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const openAuth = useAuthStore((state) => state.openAuth);
+  const isOpen = useAuthStore((state) => state.isOpen);
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:p-1.5!">
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:p-1.5!"
+            >
               <Link to="/">
                 <IconCode className="size-5!" />
                 <span className="text-base font-semibold">Skilltrack</span>
@@ -49,7 +57,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {isOpen ? (
+          <NavUser user={data.user} />
+        ) : (
+          <Button onClick={() => openAuth("login")}>
+            <LogIn />
+
+            <span className="group-data-[collapsible=icon]:hidden">LogIn</span>
+          </Button>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

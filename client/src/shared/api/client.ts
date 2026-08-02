@@ -74,6 +74,7 @@ export function createHttpClient({
     );
     if (!response.ok) {
       const error = await toApiError(response);
+      console.log("request error" + error);
 
       reportApiError(error, {
         url: ctx.url,
