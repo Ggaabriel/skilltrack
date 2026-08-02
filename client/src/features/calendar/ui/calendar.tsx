@@ -2,7 +2,7 @@ import { CalendarBody } from "@/features/calendar/ui/calendar-body";
 import { CalendarProvider } from "@/features/calendar/model/contexts/calendar-context";
 import { DndProvider } from "@/features/calendar/model/contexts/dnd-context";
 import { CalendarHeader } from "@/features/calendar/ui/header/calendar-header";
-import { useEventsQuery } from "./api/event.queries";
+import { useEventsQuery } from "../api/event.queries";
 
 export function Calendar() {
   // const events: IEvent[] = [{

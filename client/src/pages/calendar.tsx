@@ -1,4 +1,4 @@
-import { Calendar } from "@/features/calendar/Calendar";
+import { Calendar } from "@/features/calendar";
 import { CalendarSkeleton } from "@/features/calendar/ui/skeletons/calendar-skeleton";
 import { Suspense } from "react";
 

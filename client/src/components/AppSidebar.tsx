@@ -16,7 +16,7 @@ import { Link } from "react-router";
 import { Routes } from "@/shared/routing/routes";
 import { Button } from "./ui/button";
 import { LogIn } from "lucide-react";
-import { useAuthStore } from "@/app/store/auth.store";
+import { useAuthIsOpen, useOpenAuth } from "@/features/auth";
 
 const data = {
   user: {
@@ -34,8 +34,8 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const openAuth = useAuthStore((state) => state.openAuth);
-  const isOpen = useAuthStore((state) => state.isOpen);
+  const openAuth = useOpenAuth();
+  const isOpen = useAuthIsOpen();
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>

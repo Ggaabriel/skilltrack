@@ -1,6 +1,7 @@
 import { AppSidebar } from "@/components/AppSidebar";
 import { Header } from "@/components/Header";
 import { SidebarInset } from "@/components/ui/sidebar";
+import { AuthDialog } from "@/features/auth";
 import { CalendarPage } from "@/pages/calendar";
 import { Routes } from "@/shared/routing/routes";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router";
@@ -8,6 +9,7 @@ import { createBrowserRouter, Outlet, RouterProvider } from "react-router";
 function RootLayout() {
   return (
     <>
+      <AuthDialog />
       <AppSidebar variant="inset" />
       <SidebarInset>
         <Header />
