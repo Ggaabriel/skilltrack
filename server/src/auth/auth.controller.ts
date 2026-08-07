@@ -42,7 +42,7 @@ export class AuthController {
     this.logger.log('User registered successfully', {
       email: registerDto.email,
     });
-    return { data: { accessToken, refreshToken } };
+    return { data: { accessToken } };
   }
 
   @UseGuards(LocalAuthGuard)
@@ -62,7 +62,7 @@ export class AuthController {
     this.authCookieService.setRefreshTokenCookie(res, refreshToken);
     this.logger.log('Login successful', { userId: req.user.id });
 
-    return { data: { accessToken, refreshToken } };
+    return { data: { accessToken } };
   }
 
   @UseGuards(RefreshJwtAuthGuard)
@@ -94,7 +94,7 @@ export class AuthController {
       sessionId: payload.sessionId,
     });
 
-    return { data: { accessToken, refreshToken: newRefreshToken } };
+    return { data: { accessToken } };
   }
 
   @UseGuards(RefreshJwtAuthGuard)

@@ -8,15 +8,18 @@ import {
 
 import { Button } from "@/components/ui/button";
 
-import { 
+import {
   useAuthIsOpen,
   useAuthMode,
   useCloseAuth,
-  useOpenAuth
+  useOpenAuth,
 } from "../model/selectors";
 
 import LoginForm from "./login-form";
 import RegisterForm from "./register-form";
+
+import miku_normal from "../assets/miku_normal.png";
+import miku_sekai from "../assets/miku_sekai.png";
 
 export function AuthDialog() {
   const isOpen = useAuthIsOpen();
@@ -30,14 +33,12 @@ export function AuthDialog() {
     <Dialog open={isOpen} onOpenChange={closeAuth}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {isLogin ? "Sign in" : "Create account"}
-          </DialogTitle>
+          <img src={miku_normal} alt="normal_face" />
+
+          <DialogTitle>{isLogin ? "Sign in" : "Create account"}</DialogTitle>
 
           <DialogDescription>
-            {isLogin
-              ? "Welcome back!"
-              : "Welcome to SkillTrack!"}
+            {isLogin ? "Welcome back!" : "Welcome to SkillTrack!"}
           </DialogDescription>
         </DialogHeader>
 
