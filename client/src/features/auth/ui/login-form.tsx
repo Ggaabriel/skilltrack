@@ -1,11 +1,23 @@
-import React from 'react'
+import { zodResolver } from "@hookform/resolvers/zod";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { loginSchema, type LoginDto } from "../model/schemas";
 
-type Props = {}
+type Props = {};
 
 const LoginForm = (props: Props) => {
-  return (
-    <div>LoginForm</div>
-  )
-}
+  const {
+    handleSubmit,
+    formState: { isSubmitting, errors },
+  } = useForm<LoginDto>({
+    resolver: zodResolver(loginSchema),
+  });
 
-export default LoginForm
+  const onSubmit = (data: LoginDto) => {
+    
+  }
+
+  return <form onSubmit={() => 123}></form>;
+};
+
+export default LoginForm;
