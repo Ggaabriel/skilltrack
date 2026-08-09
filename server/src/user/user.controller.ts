@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Logger,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -17,6 +18,8 @@ import { EventService } from 'src/event/event.service';
 import { GetUserEventsDto } from './dto/get-user-events.dto';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { JwtPayload } from 'src/auth/types/jwt-payload';
 
 const responseContainer = <T extends Record<string, unknown>>(
   data: unknown,
@@ -83,6 +86,11 @@ export class UserController {
 
     this.logger.log('User found', { userId: id });
     return responseContainer(user);
+  }
+
+  @Get('me')
+  getMe() {
+    console.log(123123123123123);
   }
 
   @ApiOperation({ summary: 'Update a specific user by ID' })
