@@ -9,7 +9,6 @@ import {
   Query,
   UseGuards,
   Logger,
-  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -58,7 +57,7 @@ export class UserController {
     };
 
     this.logger.log('Found users', { total, page, limit });
-    return responseContainer(users, meta);
+    return responseContainer(users, { meta });
   }
 
   @ApiOperation({ summary: 'Get events for a specific user' })
@@ -73,24 +72,33 @@ export class UserController {
     return responseContainer(events);
   }
 
-  @ApiOperation({ summary: 'Get a specific user by ID' })
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    this.logger.log('Find user request', { id });
-    const user = await this.userService.findOne(+id);
+  @Get('me')
+  async getMe(@CurrentUser() { userId }: JwtPayload) {
+    this.logger.log('Find user request', { userId });
+    const user = await this.userService.findOne(+userId);
 
     if (!user) {
-      this.logger.warn('User not found', { userId: id });
+      this.logger.warn('User not found', { userId });
       return responseContainer(null, { message: 'User not found' });
     }
 
-    this.logger.log('User found', { userId: id });
+    this.logger.log('User found', { userId });
     return responseContainer(user);
   }
 
-  @Get('me')
-  getMe() {
-    console.log(123123123123123);
+  @ApiOperation({ summary: 'Get a specific user by ID' })
+  @Get(':userId')
+  async findOne(@Param('userId') userId: string) {
+    this.logger.log('Find user request', { userId });
+    const user = await this.userService.findOne(+userId);
+
+    if (!user) {
+      this.logger.warn('User not found', { userId });
+      return responseContainer(null, { message: 'User not found' });
+    }
+
+    this.logger.log('User found', { userId });
+    return responseContainer(user);
   }
 
   @ApiOperation({ summary: 'Update a specific user by ID' })

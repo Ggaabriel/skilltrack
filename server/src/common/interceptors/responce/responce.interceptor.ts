@@ -22,7 +22,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
           status: response.statusCode,
           message: 'success',
           data,
-          options,
+          ...options,
         };
       }),
     );
