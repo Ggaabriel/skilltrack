@@ -48,7 +48,8 @@ export function createRefresher(
         cause: parsed.error,
       });
     }
-
+    console.log('refresh.ts: accessToken = ', parsed.data.accessToken);
+    
     authTokenStore.set(parsed.data.accessToken);
     return parsed.data.accessToken;
   }

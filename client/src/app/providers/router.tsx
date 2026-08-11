@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { AuthDialog } from "@/features/auth";
 import { CalendarPage } from "@/pages/calendar";
+import { RequireAuth } from "@/shared/auth/RequireAuth";
 import { Routes } from "@/shared/routing/routes";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router";
 
@@ -28,8 +29,13 @@ const router = createBrowserRouter([
         element: <div>Base</div>,
       },
       {
-        path: Routes.CALENDAR,
-        element: <CalendarPage />,
+        element: <RequireAuth />,
+        children: [
+          {
+            path: Routes.CALENDAR,
+            element: <CalendarPage />,
+          },
+        ],
       },
       {
         path: "/*",

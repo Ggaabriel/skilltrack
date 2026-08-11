@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { userApi } from "./user.api";
 
-const userKeys = {
+export const userKeys = {
   me: ["me"] as const,
 };
 

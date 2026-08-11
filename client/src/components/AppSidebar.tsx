@@ -16,7 +16,9 @@ import { Link } from "react-router";
 import { Routes } from "@/shared/routing/routes";
 import { Button } from "./ui/button";
 import { LogIn } from "lucide-react";
-import { useAuthIsOpen, useOpenAuth } from "@/features/auth";
+import { useOpenAuth } from "@/features/auth";
+import { Access } from "@/shared/auth/access";
+import { Can } from "@/shared/auth/Can";
 
 const data = {
   user: {
@@ -29,13 +31,13 @@ const data = {
       title: "Calendar",
       url: Routes.CALENDAR,
       icon: IconCalendarEvent,
+      access: Access.AUTHENTICATED,
     },
   ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const openAuth = useOpenAuth();
-  const isOpen = useAuthIsOpen();
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -57,15 +59,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        {isOpen ? (
+        <Can access={Access.AUTHENTICATED}>
           <NavUser user={data.user} />
-        ) : (
+        </Can>
+
+        <Can access={Access.GUEST}>
           <Button onClick={() => openAuth("login")}>
             <LogIn />
 
             <span className="group-data-[collapsible=icon]:hidden">LogIn</span>
           </Button>
-        )}
+        </Can>
       </SidebarFooter>
     </Sidebar>
   );

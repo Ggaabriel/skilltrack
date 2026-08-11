@@ -2,7 +2,7 @@ import { httpClient } from "@/shared/api";
 import type { ApiResponse } from "@/shared/api/client";
 import type { LoginDto, RegisterDto } from "../model/schemas";
 
-type TAccessToken = { accessToken: string };
+export type TAccessToken = { accessToken: string };
 
 /**
  * Auth API endpoints

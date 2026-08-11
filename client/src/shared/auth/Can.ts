@@ -1,24 +1,32 @@
 import type { ReactNode } from "react";
 import type { Access } from "./access";
-import { canAccess } from "./canAccess";
 import { useAccess } from "./useAccess";
 
 interface CanProps {
-  access: Access;
+  access?: Access;
   children: ReactNode;
   fallback?: ReactNode;
 }
 
-export function Can({ access, children, fallback = null }: CanProps) {
+export function Can({
+  access,
+  children,
+  fallback = null,
+}: CanProps) {
   const { isAuthenticated, isPending } = useAccess();
 
   if (isPending) {
     return null;
   }
 
-  if (!canAccess(access, isAuthenticated)) {
-    return fallback;
+  if (!access) {
+    return children;
   }
 
-  return children;
+  const allowed =
+    access === "authenticated"
+      ? isAuthenticated
+      : !isAuthenticated;
+
+  return allowed ? children : fallback;
 }
