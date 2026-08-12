@@ -11,10 +11,22 @@ export function useLogin() {
     mutationFn: (dto: LoginDto) => authApi.login(dto),
 
     onSuccess: async (data) => {
-      authTokenStore.set(data.data.accessToken)
+      authTokenStore.set(data.data.accessToken);
       await queryClient.invalidateQueries({
         queryKey: userKeys.me,
       });
+    },
+  });
+}
+
+export function useLogout() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: authApi.logout,
+
+    onSuccess: () => {
+      queryClient.setQueryData(userKeys.me, null);
     },
   });
 }

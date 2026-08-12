@@ -23,7 +23,7 @@ export const authApi = {
    * @param dto email+password+name
    */
   register(dto: RegisterDto): Promise<ApiResponse<TAccessToken>> {
-    return httpClient.post("auth/register", dto);
+    return httpClient.post("/auth/register", dto);
   },
 
   /**
@@ -31,7 +31,7 @@ export const authApi = {
    * POST /auth/refresh
    */
   refresh(): Promise<ApiResponse<{ data: null }>> {
-    return httpClient.post("auth/refresh");
+    return httpClient.post("/auth/refresh");
   },
 
   /**
@@ -39,6 +39,6 @@ export const authApi = {
    * POST /auth/logout
    */
   logout(): Promise<ApiResponse<{ data: null }>> {
-    return httpClient.post("auth/logout");
+    return httpClient.post("/auth/logout");
   },
 };
