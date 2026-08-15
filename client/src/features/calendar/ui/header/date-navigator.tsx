@@ -1,44 +1,45 @@
-import { formatDate } from "date-fns"
-import { AnimatePresence, motion } from "framer-motion"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { useMemo } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { buttonHover, transition } from "@/features/calendar/config/animations"
-import { useCalendar } from "@/features/calendar/model/hooks"
+import { formatDate } from "date-fns";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { buttonHover, transition } from "@/features/calendar/config/animations";
+import { useCalendar } from "@/features/calendar/model/hooks";
 
 import {
   getEventsCount,
   navigateDate,
   rangeText,
-} from "@/features/calendar/model/helpers"
+} from "@/features/calendar/model/helpers";
 
-import type { IEvent } from "@/features/calendar/model/interfaces"
-import type { TCalendarView } from "@/features/calendar/model/types"
+import type { IEvent } from "@/features/calendar/model/interfaces";
+import type { TCalendarView } from "@/features/calendar/model/types";
 
 interface IProps {
-  view: TCalendarView
-  events: IEvent[]
+  view: TCalendarView;
+  events: IEvent[];
 }
 
-const MotionButton = motion.create(Button)
-const MotionBadge = motion.create(Badge)
+const MotionButton = motion.create(Button);
+const MotionBadge = motion.create(Badge);
 
 export function DateNavigator({ view, events }: IProps) {
-  const { selectedDate, setSelectedDate } = useCalendar()
+  const { selectedDate, setSelectedDate } = useCalendar();
 
-  const month = formatDate(selectedDate, "MMMM")
-  const year = selectedDate.getFullYear()
+  const month = formatDate(selectedDate, "MMMM");
+  const year = selectedDate.getFullYear();
 
   const eventCount = useMemo(
     () => getEventsCount(events, selectedDate, view),
-    [events, selectedDate, view]
-  )
+    [events, selectedDate, view],
+  );
 
   const handlePrevious = () =>
-    setSelectedDate(navigateDate(selectedDate, view, "previous"))
+    setSelectedDate(navigateDate(selectedDate, view, "previous"));
+
   const handleNext = () =>
-    setSelectedDate(navigateDate(selectedDate, view, "next"))
+    setSelectedDate(navigateDate(selectedDate, view, "next"));
 
   return (
     <div className="space-y-0.5">
@@ -100,5 +101,5 @@ export function DateNavigator({ view, events }: IProps) {
         </MotionButton>
       </div>
     </div>
-  )
+  );
 }

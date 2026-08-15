@@ -5,33 +5,84 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useLogin } from "../api/auth.queries";
 import { useCloseAuth } from "../model/selectors";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
-type Props = {};
-
-const LoginForm = (props: Props) => {
-  const {
-    register,
-    handleSubmit,
-    formState: { isSubmitting, errors },
-  } = useForm<LoginDto>({
+const LoginForm = () => {
+  const form = useForm<LoginDto>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "john.doe@example.com",
+      password: "password123",
+    },
   });
 
-  const closeAuth = useCloseAuth()
+  const closeAuth = useCloseAuth();
   const login = useLogin();
-  const onSubmit = (dto: LoginDto) => {
-    login.mutate(dto);
-    closeAuth()
+  const onSubmit = async (dto: LoginDto) => {
+    await login.mutateAsync(dto);
+    closeAuth();
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Input {...register("email")} value="john.doe@example.com"/>
-
-      <Input {...register("password")} value="password123" />
-
-      <Button>Login</Button>
-    </form>
+    <Form {...form}>
+      <form
+        id="loginForm"
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="grid gap-4"
+      >
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field, fieldState }) => (
+            <FormItem>
+              <FormLabel htmlFor="email" className="required">
+                Email
+              </FormLabel>
+              <FormControl>
+                <Input
+                  id="email"
+                  placeholder="Enter a email"
+                  {...field}
+                  className={fieldState.invalid ? "border-red-500" : ""}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field, fieldState }) => (
+            <FormItem>
+              <FormLabel htmlFor="password" className="required">
+                Password
+              </FormLabel>
+              <FormControl>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter a password"
+                  {...field}
+                  className={fieldState.invalid ? "border-red-500" : ""}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button form="loginForm" type="submit" disabled={login.isPending}>
+          {login.isPending ? "Logging in..." : "Login"}
+        </Button>
+      </form>
+    </Form>
   );
 };
 

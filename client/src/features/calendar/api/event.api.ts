@@ -19,7 +19,7 @@ export const eventApi = {
    * GET /user/{userId}/events?startDate=...&endDate=...
    */
   getUserEvents(
-    userId: string,
+    userId: number,
     startDate: string,
     endDate: string,
   ): Promise<ApiResponse<IEvent[]>> {

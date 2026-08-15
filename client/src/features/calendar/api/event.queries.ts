@@ -13,9 +13,9 @@ export const eventKeys = {
   detail: (id: string) => [...eventKeys.details(), id] as const,
 };
 
-export const useEventsQuery = (startDate: string, endDate: string) => {
+export const useEventsQuery = (id: number, startDate: string, endDate: string) => {
   return useSuspenseQuery({
     queryKey: eventKeys.list(startDate, endDate),
-    queryFn: () => eventApi.getUserEvents("1", startDate, endDate),
+    queryFn: () => eventApi.getUserEvents(id, startDate, endDate),
   });
 };

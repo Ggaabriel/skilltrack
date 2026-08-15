@@ -18,9 +18,6 @@ import {
 import LoginForm from "./login-form";
 import RegisterForm from "./register-form";
 
-import miku_normal from "../assets/miku_normal.png";
-import miku_sekai from "../assets/miku_sekai.png";
-
 export function AuthDialog() {
   const isOpen = useAuthIsOpen();
   const mode = useAuthMode();
@@ -33,8 +30,6 @@ export function AuthDialog() {
     <Dialog open={isOpen} onOpenChange={closeAuth}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <img src={miku_normal} alt="normal_face" />
-
           <DialogTitle>{isLogin ? "Sign in" : "Create account"}</DialogTitle>
 
           <DialogDescription>

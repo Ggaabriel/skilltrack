@@ -8,7 +8,8 @@ export const userApi = {
    * GET /user/me
    * @param dto id+email+name+picturePath
    */
-  me(): Promise<ApiResponse<UserDto>> {
-    return httpClient.get("/user/me");
+  me: async (): Promise<UserDto> => {
+    const response = await httpClient.get<ApiResponse<UserDto>>("/user/me");
+    return response.data;
   },
 };
