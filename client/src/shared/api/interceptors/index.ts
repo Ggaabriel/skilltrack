@@ -3,6 +3,7 @@ import type { RequestContext } from "../client";
 export type Interceptor = (
   ctx: RequestContext,
   next: () => Promise<Response>,
+  retry: () => Promise<Response>,
 ) => Promise<Response>;
 
 export async function runInterceptors(
@@ -10,22 +11,28 @@ export async function runInterceptors(
   interceptors: Interceptor[],
   handler: () => Promise<Response>,
 ): Promise<Response> {
-  let index = -1;
-
   async function dispatch(position: number): Promise<Response> {
-    if (position <= index) {
-      throw new Error("next() called multiple times");
-    }
-
-    index = position;
-
     const interceptor = interceptors[position];
 
     if (!interceptor) {
       return handler();
     }
 
-    return interceptor(ctx, () => dispatch(position + 1));
+    let nextCalled = false;
+
+    const next = async () => {
+      if (nextCalled) {
+        throw new Error("next() called multiple times");
+      }
+
+      nextCalled = true;
+
+      return dispatch(position + 1);
+    };
+
+    const retry = () => dispatch(0);
+
+    return interceptor(ctx, next, retry);
   }
 
   return dispatch(0);

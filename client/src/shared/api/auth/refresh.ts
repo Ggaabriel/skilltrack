@@ -1,15 +1,12 @@
-import { z } from "zod";
 import { authTokenStore } from "./authToken";
 import { ApiError, codeFromStatus } from "../error";
+import { sendRequest } from "../transport";
+import type { ApiResponse } from "../client";
 
 export interface RefresherOptions {
   baseURL: string;
   path?: string;
 }
-
-const RefreshResponseSchema = z.object({
-  accessToken: z.string().min(1),
-});
 
 export function createRefresher(
   options: RefresherOptions,
@@ -20,7 +17,7 @@ export function createRefresher(
   let inflightRequest: Promise<string> | null = null;
 
   async function performRefresh(): Promise<string> {
-    const response = await fetch(refreshURL, {
+    const response = await sendRequest(refreshURL, {
       method: "POST",
       credentials: "include",
     });
@@ -35,21 +32,19 @@ export function createRefresher(
       });
     }
 
-    const parsed = RefreshResponseSchema.safeParse(await response.json());
-    if (!parsed.success) {
+    const parsed: ApiResponse<{ accessToken: string }> = await response.json();
+
+    if (
+      !parsed.data.accessToken &&
+      typeof parsed.data.accessToken !== "string"
+    ) {
       throw new ApiError({
-        status: 502,
-        code: "SERVER",
-        message: "Unable to refresh authentication. Please try again later.",
-        payload: {
-          endpoint: "auth/refresh",
-          issues: parsed.error.issues,
-        },
-        cause: parsed.error,
+        status: response.status,
+        code: codeFromStatus(response.status),
+        message: "Invalid accessToken: " + parsed.data.accessToken,
+        payload: { endpoint: "auth/refresh" },
       });
     }
-    console.log('refresh.ts: accessToken = ', parsed.data.accessToken);
-    
     authTokenStore.set(parsed.data.accessToken);
     return parsed.data.accessToken;
   }

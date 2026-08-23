@@ -12,15 +12,15 @@ function attachAccessToken(ctx: RequestContext) {
   const headers = new Headers(ctx.init.headers);
 
   headers.set("Authorization", `Bearer ${token}`);
-  console.log('auth.interceptor.ts: token = ', token);
-  
+  console.log("auth.interceptor.ts: token = ", token);
+
   ctx.init.headers = headers;
 }
 
 export function createAuthInterceptor(options: {
   refresh: () => Promise<string>;
 }): Interceptor {
-  return async (ctx, next) => {
+  return async (ctx, next, retry) => {
     attachAccessToken(ctx);
 
     const response = await next();
@@ -34,14 +34,9 @@ export function createAuthInterceptor(options: {
     try {
       await options.refresh();
 
-      attachAccessToken(ctx);
-
-      return next();
+      return await retry();
     } catch (error) {
-      console.log("auth interceptor error:" + error);
-
       authTokenStore.clear();
-
       throw error;
     }
   };
