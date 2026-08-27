@@ -9,6 +9,7 @@ import type {
 import { CalendarContext } from ".";
 import { useRequiredUser } from "@/shared/auth/useRequiredUser";
 import { useEventsQuery } from "../../api/event.queries";
+import { CalendarSkeleton } from "../../ui/skeletons/calendar-skeleton";
 
 interface CalendarSettings {
   badgeVariant: "dot" | "colored";
@@ -67,11 +68,11 @@ export function CalendarProvider({
   const start = `${year}-01-01`;
   const end = `${year}-12-31`;
 
-  const eventsQuery = useEventsQuery(user.id, start, end);
+  const { isFetching, isPending, data } = useEventsQuery(user.id, start, end);
 
-  const events = eventsQuery.data?.data ?? [];
+  const events = data?.data ?? [];
   // end
-  
+
   const [selectedUserId, setSelectedUserId] = useState<IUser["id"] | "all">(
     "all",
   );
@@ -195,7 +196,7 @@ export function CalendarProvider({
 
   return (
     <CalendarContext.Provider value={value}>
-      {children}
+      {isFetching || isPending ? <CalendarSkeleton /> : children}
     </CalendarContext.Provider>
   );
 }

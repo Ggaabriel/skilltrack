@@ -16,7 +16,7 @@ export function Can({
   const { isAuthenticated, isPending } = useAccess();
 
   if (isPending) {
-    return null;
+    return fallback;
   }
 
   if (!access) {

@@ -7,15 +7,24 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 export const eventKeys = {
   all: ["events"] as const,
   lists: () => [...eventKeys.all, "list"] as const,
-  list: (startDate: string, endDate: string) =>
-    [...eventKeys.lists(), startDate, endDate] as const,
+  list: (userId: number, startDate: string, endDate: string) =>
+    [...eventKeys.lists(), userId, startDate, endDate] as const,
+
   details: () => [...eventKeys.all, "details"] as const,
   detail: (id: string) => [...eventKeys.details(), id] as const,
 };
 
-export const useEventsQuery = (id: number, startDate: string, endDate: string) => {
+export const useEventsQuery = (
+  id: number,
+  startDate: string,
+  endDate: string,
+) => {
   return useSuspenseQuery({
-    queryKey: eventKeys.list(startDate, endDate),
-    queryFn: () => eventApi.getUserEvents(id, startDate, endDate),
+    queryKey: eventKeys.all,
+    queryFn: () => {
+      console.log("events query function");
+
+      return eventApi.getUserEvents(id, startDate, endDate);
+    },
   });
 };

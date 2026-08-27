@@ -12,7 +12,6 @@ function attachAccessToken(ctx: RequestContext) {
   const headers = new Headers(ctx.init.headers);
 
   headers.set("Authorization", `Bearer ${token}`);
-  console.log("auth.interceptor.ts: token = ", token);
 
   ctx.init.headers = headers;
 }
