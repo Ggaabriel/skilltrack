@@ -3,9 +3,8 @@ import {
   IsDateString,
   IsDefined,
   IsNotEmpty,
-  IsNumber,
-  IsOptional,
   IsString,
+  ValidateIf,
 } from 'class-validator';
 import type { TEventColor } from '../types/event-color.type';
 
@@ -24,8 +23,8 @@ export class CreateEventDto {
     description: 'The description of the event',
   })
   @IsString()
-  @IsOptional()
-  'description'?: string;
+  @ValidateIf((object, value) => value !== null)
+  'description': string | null;
 
   @ApiProperty({
     example: '2023-10-15T10:00:00.000Z',
@@ -53,13 +52,4 @@ export class CreateEventDto {
   @IsNotEmpty()
   @IsString()
   'color': TEventColor;
-
-  @ApiProperty({
-    example: 1,
-    description: 'The ID of the user who created the event',
-  })
-  @IsDefined()
-  @IsNotEmpty()
-  @IsNumber()
-  'userId': number;
 }

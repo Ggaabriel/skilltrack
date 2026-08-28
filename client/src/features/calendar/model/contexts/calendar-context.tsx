@@ -7,9 +7,9 @@ import type {
   TEventColor,
 } from "@/features/calendar/model/types";
 import { CalendarContext } from ".";
-import { useRequiredUser } from "@/shared/auth/useRequiredUser";
 import { useEventsQuery } from "../../api/event.queries";
 import { CalendarSkeleton } from "../../ui/skeletons/calendar-skeleton";
+import { Loader2 } from "lucide-react";
 
 interface CalendarSettings {
   badgeVariant: "dot" | "colored";
@@ -27,12 +27,10 @@ const DEFAULT_SETTINGS: CalendarSettings = {
 
 export function CalendarProvider({
   children,
-  // events,
   badge = "colored",
   view = "day",
 }: {
   children: React.ReactNode;
-  // events: IEvent[]
   view?: TCalendarView;
   badge?: "dot" | "colored";
 }) {
@@ -61,14 +59,12 @@ export function CalendarProvider({
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   // events query
-  const user = useRequiredUser();
-
   const year = selectedDate.getFullYear();
 
   const start = `${year}-01-01`;
   const end = `${year}-12-31`;
 
-  const { isFetching, isPending, data } = useEventsQuery(user.id, start, end);
+  const { isFetching, isPending, data } = useEventsQuery(start, end);
 
   const events = data?.data ?? [];
   // end
@@ -128,16 +124,6 @@ export function CalendarProvider({
     setSelectedColors(newColors);
   };
 
-  // const filterEventsBySelectedUser = (userId: IUser["id"] | "all") => {
-  //   setSelectedUserId(userId)
-  //   if (userId === "all") {
-  //     setFilteredEvents(allEvents)
-  //   } else {
-  //     const filtered = allEvents.filter((event) => event.user.id === userId)
-  //     setFilteredEvents(filtered)
-  //   }
-  // }
-
   const handleSelectDate = (date: Date | undefined) => {
     if (!date) return;
     setSelectedDate(date);
@@ -196,7 +182,41 @@ export function CalendarProvider({
 
   return (
     <CalendarContext.Provider value={value}>
-      {isFetching || isPending ? <CalendarSkeleton /> : children}
+      {isPending ? (
+        <CalendarSkeleton />
+      ) : (
+        <div className="relative">
+          {children}
+
+          {isFetching && (
+            <div className="absolute inset-0 z-50 overflow-hidden">
+              {/* Blur + затемнение */}
+              <div className="absolute inset-0 bg-background/45 backdrop-blur-[2px]" />
+
+              {/* Ben-Day dots с затуханием вниз */}
+              <div
+                className="absolute inset-0 opacity-40"
+                style={{
+                  backgroundImage:
+                    "radial-gradient(circle, currentColor 1px, transparent 1px)",
+                  backgroundSize: "8px 8px",
+                  maskImage:
+                    "linear-gradient(to bottom, black 0%, black 35%, transparent 100%)",
+                  WebkitMaskImage:
+                    "linear-gradient(to bottom, black 0%, black 35%, transparent 100%)",
+                }}
+              />
+
+              {/* Spinner */}
+              <div className="absolute left-1/2 top-3 -translate-x-1/2">
+                <div className="flex size-8 items-center justify-center rounded-full bg-background/90 shadow-sm ring-1 ring-border">
+                  <Loader2 className="size-4 animate-spin" />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </CalendarContext.Provider>
   );
 }

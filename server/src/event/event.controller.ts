@@ -14,6 +14,13 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { JwtPayload } from 'src/auth/types/jwt-payload';
+
+const responseContainer = <T extends Record<string, unknown>>(
+  data: unknown,
+  options?: T,
+) => ({ data, ...options });
 
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
@@ -25,9 +32,20 @@ export class EventController {
 
   @ApiOperation({ summary: 'Create a new event' })
   @Post()
-  create(@Body() createEventDto: CreateEventDto) {
+  async create(
+    @Body() createEventDto: CreateEventDto,
+    @CurrentUser() { userId }: JwtPayload,
+  ) {
     this.logger.log('Create event request', { data: createEventDto });
-    return this.eventService.create(createEventDto);
+
+    const event = {
+      userId,
+      ...createEventDto,
+    };
+
+    const newEvent = await this.eventService.create(event);
+
+    return responseContainer(newEvent);
   }
 
   @ApiOperation({ summary: 'Get a specific event by ID' })
@@ -39,18 +57,23 @@ export class EventController {
 
   @ApiOperation({ summary: 'Update a specific event by ID' })
   @Patch(':id')
-  update(@Param('id') id: number, @Body() updateEventDto: UpdateEventDto) {
+  async update(
+    @Param('id') id: number,
+    @Body() updateEventDto: UpdateEventDto,
+  ) {
     this.logger.log('Update event request', {
       eventId: id,
       updates: updateEventDto,
     });
-    return this.eventService.update(id, updateEventDto);
+    const updatedEvent = await this.eventService.update(id, updateEventDto);
+    return responseContainer(updatedEvent);
   }
 
   @ApiOperation({ summary: 'Delete a specific event by ID' })
   @Delete(':id')
-  remove(@Param('id') id: number) {
+  async remove(@Param('id') id: number) {
     this.logger.log('Delete event request', { eventId: id });
-    return this.eventService.remove(id);
+    await this.eventService.remove(id);
+    return responseContainer(null, { message: 'Event deleted' });
   }
 }

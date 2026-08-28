@@ -2,6 +2,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Header } from "@/components/Header";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { AuthDialog } from "@/features/auth";
+import { CalendarSkeleton } from "@/features/calendar/ui/skeletons/calendar-skeleton";
 import { CalendarPage } from "@/pages/calendar";
 import { RequireAuth } from "@/shared/auth/RequireAuth";
 import { Routes } from "@/shared/routing/routes";
@@ -29,7 +30,7 @@ const router = createBrowserRouter([
         element: <div>Base</div>,
       },
       {
-        element: <RequireAuth />,
+        element: <RequireAuth fallback={<CalendarSkeleton />} />,
         children: [
           {
             path: Routes.CALENDAR,

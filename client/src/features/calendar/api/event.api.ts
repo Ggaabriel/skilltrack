@@ -19,11 +19,10 @@ export const eventApi = {
    * GET /user/{userId}/events?startDate=...&endDate=...
    */
   getUserEvents(
-    userId: number,
     startDate: string,
     endDate: string,
   ): Promise<ApiResponse<IEvent[]>> {
-    return httpClient.get(`/user/${userId}/events?startDate=${startDate}&endDate=${endDate}`);
+    return httpClient.get(`/user/events?startDate=${startDate}&endDate=${endDate}`);
   },
 
   /**

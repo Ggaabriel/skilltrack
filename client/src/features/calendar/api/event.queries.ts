@@ -15,7 +15,6 @@ export const eventKeys = {
 };
 
 export const useEventsQuery = (
-  id: number,
   startDate: string,
   endDate: string,
 ) => {
@@ -23,8 +22,7 @@ export const useEventsQuery = (
     queryKey: eventKeys.all,
     queryFn: () => {
       console.log("events query function");
-
-      return eventApi.getUserEvents(id, startDate, endDate);
+      return eventApi.getUserEvents(startDate, endDate);
     },
   });
 };

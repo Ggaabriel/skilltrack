@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Event } from './entities/event.entity';
 const select = {
   id: true,
   title: true,
@@ -15,15 +15,15 @@ export class EventService {
   private readonly logger = new Logger(EventService.name);
 
   constructor(private readonly prisma: PrismaService) {}
-  async create(createEventDto: CreateEventDto) {
-    this.logger.log('Creating event', { data: createEventDto });
-    const event = await this.prisma.event.create({
-      data: createEventDto,
+  async create(event: Omit<Event, 'id'>) {
+    this.logger.log('Creating event', { data: event });
+    const createdEvent = await this.prisma.event.create({
+      data: event,
       select,
     });
 
-    this.logger.log('Event created', { eventId: event.id });
-    return event;
+    this.logger.log('Event created', { eventId: createdEvent.id });
+    return createdEvent;
   }
   async getUserEvents(userId: number, startDate: string, endDate: string) {
     this.logger.log('Fetching user events', { userId, startDate, endDate });
@@ -79,11 +79,10 @@ export class EventService {
 
   async remove(id: number) {
     this.logger.log('Removing event', { eventId: id });
-    const event = await this.prisma.event.delete({
+    await this.prisma.event.delete({
       where: { id },
       select,
     });
     this.logger.log('Event removed', { eventId: id });
-    return event;
   }
 }

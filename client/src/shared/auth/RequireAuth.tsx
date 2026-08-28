@@ -1,11 +1,16 @@
 import { Navigate, Outlet } from "react-router";
 import { useAccess } from "./useAccess";
+import type { ReactNode } from "react";
 
-export function RequireAuth() {
+interface RequireAuthProps {
+  fallback?: ReactNode;
+}
+
+export function RequireAuth({ fallback = null }: RequireAuthProps) {
   const { isAuthenticated, isPending } = useAccess();
 
   if (isPending) {
-    return null;
+    return fallback;
   }
 
   if (!isAuthenticated) {

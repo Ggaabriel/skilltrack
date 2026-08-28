@@ -4,8 +4,8 @@ export class Event {
   'id': number;
   'title': string;
   'description': string | null;
-  'startDate': Date;
-  'endDate': Date;
+  'startDate': string;
+  'endDate': string;
   'color': TEventColor;
   'userId': number;
 }

@@ -9,6 +9,7 @@ import {
 import { Link, useLocation } from "react-router";
 import type { Access } from "@/shared/auth/access";
 import { Can } from "@/shared/auth/Can";
+import { NavItemSkeleton } from "./nav-item-skeleton";
 
 export function NavMain({
   items,
@@ -28,7 +29,7 @@ export function NavMain({
     <SidebarGroup>
       <SidebarMenu>
         {items.map((item) => (
-          <Can key={item.title} access={item.access}>
+          <Can key={item.title} access={item.access} fallback={<NavItemSkeleton />}>
             <Link to={item.url} key={item.title}>
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton

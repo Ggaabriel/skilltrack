@@ -19,6 +19,8 @@ import { LogIn } from "lucide-react";
 import { useOpenAuth } from "@/features/auth";
 import { Access } from "@/shared/auth/access";
 import { Can } from "@/shared/auth/Can";
+import { NavUserSkeleton } from "./nav-user-skeleton";
+import { useUserMeQuery } from "@/entities/user/api/user.queries";
 
 const data = {
   user: {
@@ -37,6 +39,7 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { data: user } = useUserMeQuery();
   const openAuth = useOpenAuth();
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -59,8 +62,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <Can access={Access.AUTHENTICATED}>
-          <NavUser user={data.user} />
+        <Can access={Access.AUTHENTICATED} fallback={<NavUserSkeleton />}>
+          <NavUser user={user} />
         </Can>
 
         <Can access={Access.GUEST}>

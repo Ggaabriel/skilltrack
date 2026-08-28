@@ -61,11 +61,14 @@ export class UserController {
   }
 
   @ApiOperation({ summary: 'Get events for a specific user' })
-  @Get(':id/events')
-  async findEvents(@Param('id') id: string, @Query() query: GetUserEventsDto) {
-    this.logger.log('Get user events request', { userId: id, query });
+  @Get('events')
+  async findEvents(
+    @CurrentUser() { userId }: JwtPayload,
+    @Query() query: GetUserEventsDto,
+  ) {
+    this.logger.log('Get user events request', { userId, query });
     const events = await this.eventService.getUserEvents(
-      +id,
+      +userId,
       query.startDate,
       query.endDate,
     );
@@ -82,8 +85,9 @@ export class UserController {
       return responseContainer(null, { message: 'User not found' });
     }
 
-    this.logger.log('User found', { userId });
-    return responseContainer(user);
+    const { id, ...cleanUser } = user;
+    this.logger.log('User found', { id });
+    return responseContainer(cleanUser);
   }
 
   @ApiOperation({ summary: 'Get a specific user by ID' })

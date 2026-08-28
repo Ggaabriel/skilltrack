@@ -28,5 +28,5 @@ export function Can({
       ? isAuthenticated
       : !isAuthenticated;
 
-  return allowed ? children : fallback;
+  return allowed ? children : null;
 }
