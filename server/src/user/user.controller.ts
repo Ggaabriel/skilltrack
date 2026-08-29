@@ -75,6 +75,8 @@ export class UserController {
     return responseContainer(events);
   }
 
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiBearerAuth()
   @Get('me')
   async getMe(@CurrentUser() { userId }: JwtPayload) {
     this.logger.log('Find user request', { userId });

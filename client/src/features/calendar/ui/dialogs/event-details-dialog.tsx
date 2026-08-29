@@ -1,10 +1,8 @@
-"use client"
-
-import { format, parseISO } from "date-fns"
-import { Calendar, Clock, Text } from "lucide-react"
-import type { ReactNode } from "react"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
+import { format, parseISO } from "date-fns";
+import { Calendar, Clock, Text } from "lucide-react";
+import type { ReactNode } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -12,31 +10,35 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { useCalendar } from "@/features/calendar/model/hooks"
-import { AddEditEventDialog } from "@/features/calendar/ui/dialogs/add-edit-event-dialog"
-import { formatTime } from "@/features/calendar/model/helpers"
-import type { IEvent } from "@/features/calendar/model/interfaces"
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { AddEditEventDialog } from "@/features/calendar/ui/dialogs/add-edit-event-dialog";
+import { formatTime } from "@/features/calendar/model/helpers";
+import type { IEvent } from "@/features/calendar/model/interfaces";
+import { useDeleteEvent } from "@/features/calendar/api/event.queries";
+import { useCalendar } from "../../model/hooks";
 
 interface IProps {
-  event: IEvent
-  children: ReactNode
+  event: IEvent;
+  children: ReactNode;
 }
 
 export function EventDetailsDialog({ event, children }: IProps) {
-  const startDate = parseISO(event.startDate)
-  const endDate = parseISO(event.endDate)
-  const { use24HourFormat, removeEvent } = useCalendar()
+  const startDate = parseISO(event.startDate);
+  const endDate = parseISO(event.endDate);
+  const deleteEventMutation = useDeleteEvent();
+  const { use24HourFormat, removeEvent } = useCalendar();
 
-  const deleteEvent = (eventId: number) => {
+  const handleDelete = async () => {
     try {
-      removeEvent(eventId)
-      toast.success("Event deleted successfully.")
+      await deleteEventMutation.mutateAsync(event.id.toString());
+      // Удаляем событие из контекста календаря
+      removeEvent(event.id);
+      toast.success("Event deleted successfully.");
     } catch {
-      toast.error("Error deleting event.")
+      toast.error("Error deleting event.");
     }
-  }
+  };
 
   return (
     <Dialog>
@@ -48,17 +50,6 @@ export function EventDetailsDialog({ event, children }: IProps) {
 
         <ScrollArea className="max-h-[80vh]">
           <div className="space-y-4 p-4">
-            {/* In this version of the calendar app, events are not associated with specific users, only with 1 user. */}
-            {/* <div className="flex items-start gap-2">
-              <User className="mt-1 size-4 shrink-0 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Responsible</p>
-                <p className="text-sm text-muted-foreground">
-                  {event.user.name}
-                </p>
-              </div>
-            </div> */}
-
             <div className="flex items-start gap-2">
               <Calendar className="mt-1 size-4 shrink-0 text-muted-foreground" />
               <div>
@@ -100,15 +91,14 @@ export function EventDetailsDialog({ event, children }: IProps) {
           </AddEditEventDialog>
           <Button
             variant="destructive"
-            onClick={() => {
-              deleteEvent(event.id)
-            }}
+            onClick={handleDelete}
+            disabled={deleteEventMutation.isPending}
           >
-            Delete
+            {deleteEventMutation.isPending ? "Deleting..." : "Delete"}
           </Button>
         </div>
         <DialogClose />
       </DialogContent>
     </Dialog>
-  )
+  );
 }

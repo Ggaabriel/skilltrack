@@ -1,5 +1,10 @@
 import { eventApi } from "./event.api";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useSuspenseQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
+import type { IEvent } from "../model/interfaces";
 
 /**
  * Query keys for event-related queries
@@ -14,10 +19,7 @@ export const eventKeys = {
   detail: (id: string) => [...eventKeys.details(), id] as const,
 };
 
-export const useEventsQuery = (
-  startDate: string,
-  endDate: string,
-) => {
+export const useEventsQuery = (startDate: string, endDate: string) => {
   return useSuspenseQuery({
     queryKey: eventKeys.all,
     queryFn: () => {
@@ -26,3 +28,44 @@ export const useEventsQuery = (
     },
   });
 };
+
+export function useCreateEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (eventData: Omit<IEvent, "id">) =>
+      eventApi.createEvent(eventData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: eventKeys.all,
+      });
+    },
+  });
+}
+
+export function useUpdateEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<IEvent> }) =>
+      eventApi.updateEvent(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: eventKeys.all,
+      });
+    },
+  });
+}
+
+export function useDeleteEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => eventApi.deleteEvent(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: eventKeys.all,
+      });
+    },
+  });
+}
