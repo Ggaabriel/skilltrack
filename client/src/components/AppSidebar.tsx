@@ -23,11 +23,6 @@ import { NavUserSkeleton } from "./nav-user-skeleton";
 import { useUserMeQuery } from "@/entities/user/api/user.queries";
 
 const data = {
-  user: {
-    name: "Mr.Penis",
-    email: "hueta@dolboeb.ru",
-    avatar: "",
-  },
   navMain: [
     {
       title: "Calendar",
@@ -63,7 +58,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         <Can access={Access.AUTHENTICATED} fallback={<NavUserSkeleton />}>
-          <NavUser user={user} />
+          <NavUser user={user!} />
         </Can>
 
         <Can access={Access.GUEST}>

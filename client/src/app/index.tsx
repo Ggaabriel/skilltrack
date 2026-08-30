@@ -8,6 +8,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { AppRouter } from "./providers/router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { registerServiceWorker } from "@/shared/pwa/registerServiceWorker";
+
+registerServiceWorker().catch(console.error);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

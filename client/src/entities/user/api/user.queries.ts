@@ -7,7 +7,7 @@ export const userKeys = {
 };
 
 export const useUserMeQuery = () => {
-  return useQuery<UserDto | null>({
+  return useQuery<UserDto>({
     queryKey: userKeys.me,
     queryFn: userApi.me,
     retry: false,

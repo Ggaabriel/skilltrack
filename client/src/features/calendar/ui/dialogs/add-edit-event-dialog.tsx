@@ -118,7 +118,7 @@ export function AddEditEventDialog({
       };
 
       if (isEditing) {
-        const response = await updateEvent.mutateAsync({
+        await updateEvent.mutateAsync({
           id: event.id.toString(),
           data: formattedEvent,
         });
@@ -129,7 +129,7 @@ export function AddEditEventDialog({
         } as IEvent);
         toast.success("Event updated successfully");
       } else {
-        const response = await createEvent.mutateAsync(formattedEvent as any);
+        const response = await createEvent.mutateAsync(formattedEvent);
         // Добавляем новое событие в контекст календаря
         if (response.data) {
           addEvent(response.data as IEvent);
