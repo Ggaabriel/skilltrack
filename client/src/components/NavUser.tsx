@@ -1,10 +1,12 @@
 import {
-  IconCreditCard,
   IconDotsVertical,
   IconLogout,
-  IconNotification,
   IconUserCircle,
+  IconSettings,
+  IconMoon,
+  IconSun,
 } from "@tabler/icons-react";
+import { useTheme } from "@/components/theme-provider";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -23,6 +25,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useLogout } from "@/features/auth/api/auth.queries";
+import { Routes } from "@/shared/routing/routes";
+import { Link } from "react-router";
 
 export function NavUser({
   user,
@@ -34,8 +38,14 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const { theme, setTheme } = useTheme();
   const avatar = user.picturePath === null ? "" : user.picturePath;
   const logout = useLogout();
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -84,15 +94,27 @@ export function NavUser({
                 <IconUserCircle />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconCreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconNotification />
-                Notifications
+              <DropdownMenuItem asChild>
+                <Link to={Routes.SETTINGS}>
+                  <IconSettings />
+                  Settings
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={toggleTheme}>
+              {theme === "dark" ? (
+                <>
+                  <IconSun />
+                  Light Mode
+                </>
+              ) : (
+                <>
+                  <IconMoon />
+                  Dark Mode
+                </>
+              )}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => logout.mutate()}>
               <IconLogout />

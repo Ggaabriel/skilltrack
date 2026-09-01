@@ -1,5 +1,3 @@
-import { IconCalendarEvent } from "@tabler/icons-react";
-
 self.addEventListener("push", (event) => {
   if (!event.data) {
     return;
@@ -11,8 +9,8 @@ self.addEventListener("push", (event) => {
 
   const options = {
     body: data.body ?? "",
-    icon: data.icon ?? IconCalendarEvent,
-    badge: data.badge ?? IconCalendarEvent,
+    icon: data.icon ?? './poo.svg',
+    badge: data.badge ?? './poo.svg',
     tag: data.tag,
     data: {
       url: data.url ?? "/",

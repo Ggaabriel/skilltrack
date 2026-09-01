@@ -3,7 +3,8 @@ import { Header } from "@/components/Header";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { AuthDialog } from "@/features/auth";
 import { CalendarSkeleton } from "@/features/calendar/ui/skeletons/calendar-skeleton";
-import { CalendarPage } from "@/pages/calendar";
+import { CalendarPage } from "@/pages/calendar/ui/calendar-page";
+import { SettingsPage } from "@/pages/settings";
 import { RequireAuth } from "@/shared/auth/RequireAuth";
 import { Routes } from "@/shared/routing/routes";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router";
@@ -35,6 +36,15 @@ const router = createBrowserRouter([
           {
             path: Routes.CALENDAR,
             element: <CalendarPage />,
+          },
+        ],
+      },
+      {
+        element: <RequireAuth />,
+        children: [
+          {
+            path: Routes.SETTINGS,
+            element: <SettingsPage />,
           },
         ],
       },

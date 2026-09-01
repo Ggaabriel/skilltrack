@@ -7,26 +7,64 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { serializePushSubscription, subscribeToPush } from "../model/push";
+import {
+  getPushSubscription,
+  serializePushSubscription,
+  subscribeToPush,
+} from "../model/push";
 import { notificationApi } from "../api/notification.api";
 
 export function NotificationSettings() {
   const [isLoading, setIsLoading] = useState(false);
   const [enabled, setEnabled] = useState(false);
 
-  const handleEnable = async () => {
+  useEffect(() => {
+    getPushSubscription().then((subscription) => {
+      setEnabled(!!subscription);
+    });
+  }, []);
+
+ const handleEnable = async () => {
+  try {
+    setIsLoading(true);
+
+    console.log("1. subscribeToPush");
+    const subscription = await subscribeToPush();
+    console.log("2. subscription", subscription);
+
+    const dto = serializePushSubscription(subscription);
+    console.log("3. dto", dto);
+
+    // await notificationApi.subscribe(dto);
+    // console.log("4. backend success");
+
+    setEnabled(true);
+  } catch (error) {
+    console.error("ENABLE ERROR:", error);
+  } finally {
+    console.log("5. finally");
+    setIsLoading(false);
+  }
+};
+
+  const handleDisable = async () => {
     try {
       setIsLoading(true);
 
-      const subscription = await subscribeToPush();
+      const subscription = await getPushSubscription();
 
-      const dto = serializePushSubscription(subscription);
+      if (!subscription) {
+        setEnabled(false);
+        return;
+      }
 
-      await notificationApi.subscribe(dto);
+      await subscription.unsubscribe();
 
-      setEnabled(true);
+      // await notificationApi.unsubscribe(subscription.endpoint);
+
+      setEnabled(false);
     } catch (error) {
       console.error(error);
     } finally {
@@ -61,6 +99,15 @@ export function NotificationSettings() {
                 Вы будете получать напоминания о событиях.
               </p>
             </div>
+
+            <Button
+              variant="outline"
+              onClick={handleDisable}
+              disabled={isLoading}
+            >
+              {isLoading && <Loader2 className="animate-spin" />}
+              Выключить
+            </Button>
           </div>
         ) : (
           <Button onClick={handleEnable} disabled={isLoading}>

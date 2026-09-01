@@ -23,6 +23,10 @@ export async function subscribeToPush() {
     throw new Error("Notifications are not supported");
   }
 
+  if (Notification.permission === "denied") {
+    throw new Error("Уведомления запрещены в настройках браузера");
+  }
+
   if (!("serviceWorker" in navigator)) {
     throw new Error("Service Worker is not supported");
   }
