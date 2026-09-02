@@ -37,8 +37,8 @@ export function NotificationSettings() {
     const dto = serializePushSubscription(subscription);
     console.log("3. dto", dto);
 
-    // await notificationApi.subscribe(dto);
-    // console.log("4. backend success");
+    await notificationApi.subscribe(dto);
+    console.log("4. backend success");
 
     setEnabled(true);
   } catch (error) {
@@ -62,7 +62,7 @@ export function NotificationSettings() {
 
       await subscription.unsubscribe();
 
-      // await notificationApi.unsubscribe(subscription.endpoint);
+      await notificationApi.unsubscribe(subscription.endpoint);
 
       setEnabled(false);
     } catch (error) {

@@ -7,6 +7,7 @@ import { SessionModule } from './session/session.module';
 import { TokenModule } from './token/token.module';
 import { AuthCookieModule } from './auth-cookie/auth-cookie.module';
 import { ConfigModule } from '@nestjs/config';
+import { NotificationsModule } from './notifications/notifications.module';
 import jwtConfig from './config/jwt.config';
 
 @Module({
@@ -23,6 +24,7 @@ import jwtConfig from './config/jwt.config';
       envFilePath: '.env',
       load: [jwtConfig],
     }),
+    NotificationsModule,
   ],
 })
 export class AppModule {}

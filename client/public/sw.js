@@ -9,17 +9,15 @@ self.addEventListener("push", (event) => {
 
   const options = {
     body: data.body ?? "",
-    icon: data.icon ?? './poo.svg',
-    badge: data.badge ?? './poo.svg',
+    icon: data.icon ?? "./code.svg",
+    badge: data.badge ?? "./code.svg",
     tag: data.tag,
     data: {
       url: data.url ?? "/",
     },
   };
 
-  event.waitUntil(
-    self.registration.showNotification(title, options),
-  );
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener("notificationclick", (event) => {
@@ -28,18 +26,20 @@ self.addEventListener("notificationclick", (event) => {
   const url = event.notification.data?.url ?? "/";
 
   event.waitUntil(
-    clients.matchAll({
-      type: "window",
-      includeUncontrolled: true,
-    }).then((clientList) => {
-      for (const client of clientList) {
-        if ("focus" in client) {
-          client.navigate(url);
-          return client.focus();
+    clients
+      .matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      })
+      .then((clientList) => {
+        for (const client of clientList) {
+          if ("focus" in client) {
+            client.navigate(url);
+            return client.focus();
+          }
         }
-      }
 
-      return clients.openWindow(url);
-    }),
+        return clients.openWindow(url);
+      }),
   );
 });
