@@ -6,5 +6,5 @@ interface AuthStore {
 
 export const useCalendarStore = create<AuthStore>((set) => ({
   selectedDate: new Date(),
-  setS
+  setSelectedDate: (date: Date) => set({ selectedDate: date })
 }));

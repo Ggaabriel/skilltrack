@@ -21,6 +21,7 @@ import {
   toCapitalize,
 } from "@/features/calendar/model/helpers"
 import { EventBullet } from "@/features/calendar/ui/views/month-view/event-bullet"
+import type { IEvent } from "@/features/calendar/model/interfaces"
 
 export const AgendaEvents: FC = () => {
   const {
@@ -33,11 +34,19 @@ export const AgendaEvents: FC = () => {
 
   const monthEvents = getEventsForMonth(events, selectedDate)
 
-  const agendaEvents = Object.groupBy(monthEvents, (event) => {
-    return agendaModeGroupBy === "date"
-      ? format(parseISO(event.startDate), "yyyy-MM-dd")
-      : event.color
-  })
+  const agendaEvents = monthEvents.reduce<Record<string, IEvent[]>>(
+    (groups, event: IEvent) => {
+      const key =
+        agendaModeGroupBy === "date"
+          ? format(parseISO(event.startDate), "yyyy-MM-dd")
+          : event.color
+
+      groups[key] ??= []
+      groups[key].push(event)
+      return groups
+    },
+    {}
+  )
 
   const groupedAndSortedEvents = Object.entries(agendaEvents).sort(
     (a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime()

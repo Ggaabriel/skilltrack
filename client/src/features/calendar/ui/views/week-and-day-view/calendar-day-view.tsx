@@ -1,5 +1,5 @@
 import { format, isWithinInterval, parseISO } from "date-fns"
-import { Calendar, Clock, User } from "lucide-react"
+import { Calendar, Clock } from "lucide-react"
 import { useEffect, useRef } from "react"
 import { DayPicker } from "@/components/ui/day-picker"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -18,7 +18,7 @@ interface IProps {
 }
 
 export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
-  const { selectedDate, setSelectedDate, users, use24HourFormat } =
+  const { selectedDate, setSelectedDate, use24HourFormat } =
     useCalendar()
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
@@ -205,22 +205,12 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
             <ScrollArea className="h-[422px] px-4" type="always">
               <div className="space-y-6 pb-4">
                 {currentEvents.map((event) => {
-                  const user = users.find((user) => user.id === event.user.id)
 
                   return (
                     <div key={event.id} className="space-y-1.5">
                       <p className="line-clamp-2 text-sm font-semibold">
                         {event.title}
                       </p>
-
-                      {user && (
-                        <div className="flex items-center gap-1.5">
-                          <User className="text-t-quinary size-4" />
-                          <span className="text-t-tertiary text-sm">
-                            {user.name}
-                          </span>
-                        </div>
-                      )}
 
                       <div className="flex items-center gap-1.5">
                         <Calendar className="text-t-quinary size-4" />
