@@ -22,39 +22,44 @@ function RootLayout() {
   );
 }
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      element: <RootLayout />,
+      children: [
+        {
+          path: Routes.BASE,
+          element: <div>Base</div>,
+        },
+        {
+          element: <RequireAuth fallback={<CalendarSkeleton />} />,
+          children: [
+            {
+              path: Routes.CALENDAR,
+              element: <CalendarPage />,
+            },
+          ],
+        },
+        {
+          element: <RequireAuth />,
+          children: [
+            {
+              path: Routes.SETTINGS,
+              element: <SettingsPage />,
+            },
+          ],
+        },
+        {
+          path: "/*",
+          element: <div>404 Not Found</div>,
+        },
+      ],
+    },
+  ],
   {
-    element: <RootLayout />,
-    children: [
-      {
-        path: Routes.BASE,
-        element: <div>Base</div>,
-      },
-      {
-        element: <RequireAuth fallback={<CalendarSkeleton />} />,
-        children: [
-          {
-            path: Routes.CALENDAR,
-            element: <CalendarPage />,
-          },
-        ],
-      },
-      {
-        element: <RequireAuth />,
-        children: [
-          {
-            path: Routes.SETTINGS,
-            element: <SettingsPage />,
-          },
-        ],
-      },
-      {
-        path: "/*",
-        element: <div>404 Not Found</div>,
-      },
-    ],
+    basename: "/skilltrack",
   },
-]);
+);
 
 export function AppRouter() {
   return <RouterProvider router={router} />;

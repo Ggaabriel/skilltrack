@@ -1,0 +1,38 @@
+services:
+  client:
+    build:
+      context: ./client
+    container_name: skilltrack_client
+    restart: unless-stopped
+    networks:
+      - skilltrack
+
+  server:
+    build:
+      context: ./server
+    container_name: skilltrack_server
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    depends_on:
+      - db
+    networks:
+      - skilltrack
+
+  db:
+    image: postgres:15
+    container_name: skilltrack_db
+    env_file:
+      - ./server/.env
+    restart: unless-stopped
+    volumes:
+      - skilltrack_pgdata:/var/lib/postgresql/data
+    networks:
+      - skilltrack
+
+networks:
+  skilltrack:
+    name: skilltrack
+
+volumes:
+  skilltrack_pgdata:
