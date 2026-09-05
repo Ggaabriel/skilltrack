@@ -56,9 +56,6 @@ const router = createBrowserRouter(
       ],
     },
   ],
-  {
-    basename: "/skilltrack",
-  },
 );
 
 export function AppRouter() {
