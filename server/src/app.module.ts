@@ -9,6 +9,7 @@ import { AuthCookieModule } from './auth-cookie/auth-cookie.module';
 import { ConfigModule } from '@nestjs/config';
 import { NotificationsModule } from './notifications/notifications.module';
 import jwtConfig from './config/jwt.config';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import jwtConfig from './config/jwt.config';
       load: [jwtConfig],
     }),
     NotificationsModule,
+    ScheduleModule.forRoot(),
   ],
 })
 export class AppModule {}

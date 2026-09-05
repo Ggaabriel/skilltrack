@@ -8,4 +8,5 @@ export class Event {
   'endDate': string;
   'color': TEventColor;
   'userId': number;
+  'notificationSentAt': string | null;
 }

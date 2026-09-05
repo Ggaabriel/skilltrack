@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import * as webpush from 'web-push';
 import { PushSubscriptionDto } from './dto/push-subscription.dto';
+import { Event } from 'src/generated/prisma/client';
 
 @Injectable()
 export class NotificationsService {
@@ -114,5 +115,48 @@ export class NotificationsService {
 
   remove(id: number) {
     return `This action removes a #${id} notification`;
+  }
+
+  async sendEventNotification(userId: number, event: Event) {
+    const subscriptions = await this.prisma.pushSubscription.findMany({
+      where: {
+        userId,
+      },
+    });
+
+    const payload = JSON.stringify({
+      title: 'Скоро событие',
+      body: `${event.title} начнётся через 10 минут`,
+      url: `/calendar`,
+    });
+
+    for (const subscription of subscriptions) {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: subscription.endpoint,
+            expirationTime: subscription.expirationTime?.getTime() ?? null,
+            keys: {
+              p256dh: subscription.p256dh,
+              auth: subscription.auth,
+            },
+          },
+          payload,
+        );
+      } catch (error) {
+        if (
+          error instanceof webpush.WebPushError &&
+          (error.statusCode === 404 || error.statusCode === 410)
+        ) {
+          await this.prisma.pushSubscription.delete({
+            where: {
+              id: subscription.id,
+            },
+          });
+        } else {
+          console.error(error);
+        }
+      }
+    }
   }
 }

@@ -32,7 +32,7 @@ export class NotificationsController {
     @Body() dto: PushSubscriptionDto,
   ) {
     await this.notificationsService.subscribe(user.userId, dto);
-    return responseContainer({ message: 'Subscribed successfully' });
+    return responseContainer(null, { message: 'Subscribed successfully' });
   }
 
   @Delete('subscriptions')
@@ -41,7 +41,7 @@ export class NotificationsController {
     @Query('endpoint') endpoint: string,
   ) {
     await this.notificationsService.unsubscribe(user.userId, endpoint);
-    return responseContainer({ message: 'Unsubscribed successfully' });
+    return responseContainer(null, { message: 'Unsubscribed successfully' });
   }
 
   @Post('test')
@@ -49,7 +49,7 @@ export class NotificationsController {
     console.log('Notifications controller: user jwt: ', user);
 
     await this.notificationsService.sendTestNotification(user.userId);
-    return responseContainer({ message: 'Test notification sent' });
+    return responseContainer(null, { message: 'Test notification sent' });
   }
 
   // @Post()
