@@ -115,7 +115,7 @@ export function DateTimePicker({ form, field }: DatePickerProps) {
               </ScrollArea>
               <ScrollArea className="w-64 sm:w-auto">
                 <div className="flex p-2 sm:flex-col">
-                  {Array.from({ length: 12 }, (_, i) => i * 5).map((minute) => (
+                  {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
                     <Button
                       key={minute}
                       size="icon"

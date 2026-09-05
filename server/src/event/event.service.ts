@@ -15,10 +15,24 @@ export class EventService {
   private readonly logger = new Logger(EventService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  private normalizeDate(value: string | Date): Date {
+    const date = new Date(value);
+
+    date.setSeconds(0, 0);
+
+    return date;
+  }
+
   async create(event: Omit<Event, 'id'>) {
     this.logger.log('Creating event', { data: event });
+
     const createdEvent = await this.prisma.event.create({
-      data: event,
+      data: {
+        ...event,
+        startDate: this.normalizeDate(event.startDate),
+        endDate: this.normalizeDate(event.endDate),
+      },
       select,
     });
 
@@ -67,12 +81,27 @@ export class EventService {
   }
 
   async update(id: number, updateEventDto: UpdateEventDto) {
-    this.logger.log('Updating event', { eventId: id, updates: updateEventDto });
+    this.logger.log('Updating event', {
+      eventId: id,
+      updates: updateEventDto,
+    });
+
+    const data = {
+      ...updateEventDto,
+      ...(updateEventDto.startDate && {
+        startDate: this.normalizeDate(updateEventDto.startDate),
+      }),
+      ...(updateEventDto.endDate && {
+        endDate: this.normalizeDate(updateEventDto.endDate),
+      }),
+    };
+
     const event = await this.prisma.event.update({
       where: { id },
-      data: updateEventDto,
+      data,
       select,
     });
+
     this.logger.log('Event updated', { eventId: id });
     return event;
   }

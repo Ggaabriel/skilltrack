@@ -52,13 +52,4 @@ export class CreateEventDto {
   @IsNotEmpty()
   @IsString()
   'color': TEventColor;
-
-  @ApiProperty({
-    example: '2023-10-15T09:50:00.000Z',
-    description: 'The date and time when the notification was sent',
-  })
-  @IsDefined()
-  @IsNotEmpty()
-  @IsDateString()
-  'notificationSentAt': string | null;
 }
