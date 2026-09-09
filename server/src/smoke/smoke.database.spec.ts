@@ -18,7 +18,7 @@ describe('Smoke Database test', () => {
     await prisma.$disconnect();
   });
 
-  it('can we connect to database', async () => {
+  it('connect to database', async () => {
     await expect(prisma.$queryRaw`SELECT 1`).resolves.toBeDefined();
   });
 });

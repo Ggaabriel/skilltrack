@@ -1,6 +1,12 @@
 {
   "compilerOptions": {
-    "rootDir": "./src",
+    "rootDir": ".",
+
+    "baseUrl": ".",
+    "paths": {
+      "src/*": ["src/*"]
+    },
+
     "ignoreDeprecations": "6.0",
     "types": ["node", "jest"],
     "module": "nodenext",
@@ -13,10 +19,9 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2023",
+    "target": "ES2022",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
@@ -24,5 +29,7 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+
+  "include": ["src/**/*.ts", "prisma.config.ts"]
 }
