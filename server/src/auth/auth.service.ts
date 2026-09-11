@@ -155,6 +155,11 @@ export class AuthService {
       return payload;
     } catch (error) {
       this.logger.error('Refresh token validation error', error);
+
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
       throw new UnauthorizedException('Refresh token is not valid');
     }
   }
