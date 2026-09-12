@@ -65,7 +65,7 @@ export class AuthService {
   async validateUser(email: string, password: string) {
     const user = await this.userService.findByEmail(email);
     if (user && (await bcrypt.compare(password, user.password))) {
-      const result: Omit<User, 'password'> = user;
+      const result: User = user;
       return result;
     }
     return null;
@@ -160,7 +160,9 @@ export class AuthService {
         throw error;
       }
 
-      throw new UnauthorizedException('Refresh token is not valid');
+      throw new UnauthorizedException(
+        'Payload not valid or refresh token is not valid',
+      );
     }
   }
 
