@@ -108,23 +108,26 @@ export class UserController {
   }
 
   @ApiOperation({ summary: 'Update a specific user by ID' })
-  @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  @Patch()
+  async update(
+    @CurrentUser() { userId }: JwtPayload,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     this.logger.log('Update user request', {
-      userId: id,
+      userId,
       updates: updateUserDto,
     });
-    const user = await this.userService.update(+id, updateUserDto);
-    this.logger.log('User updated', { userId: id });
+    const user = await this.userService.update(userId, updateUserDto);
+    this.logger.log('User updated', { userId });
     return responseContainer(user);
   }
 
   @ApiOperation({ summary: 'Delete a specific user by ID' })
-  @Delete(':id')
-  async remove(@Param('id') id: string) {
-    this.logger.log('Remove user request', { userId: id });
-    const user = await this.userService.remove(+id);
-    this.logger.log('User removed', { userId: id });
+  @Delete()
+  async remove(@CurrentUser() { userId }: JwtPayload) {
+    this.logger.log('Remove user request', { userId });
+    const user = await this.userService.remove(userId);
+    this.logger.log('User removed', { userId });
     return user;
   }
 }

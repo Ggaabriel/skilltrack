@@ -50,9 +50,9 @@ export class EventController {
 
   @ApiOperation({ summary: 'Get a specific event by ID' })
   @Get(':id')
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id') id: number, @CurrentUser() { userId }: JwtPayload) {
     this.logger.log('Find event request', { eventId: id });
-    return this.eventService.findOne(id);
+    return this.eventService.findOne(id, userId);
   }
 
   @ApiOperation({ summary: 'Update a specific event by ID' })
@@ -60,20 +60,25 @@ export class EventController {
   async update(
     @Param('id') id: number,
     @Body() updateEventDto: UpdateEventDto,
+    @CurrentUser() { userId }: JwtPayload,
   ) {
     this.logger.log('Update event request', {
       eventId: id,
       updates: updateEventDto,
     });
-    const updatedEvent = await this.eventService.update(id, updateEventDto);
+    const updatedEvent = await this.eventService.update(
+      id,
+      updateEventDto,
+      userId,
+    );
     return responseContainer(updatedEvent);
   }
 
   @ApiOperation({ summary: 'Delete a specific event by ID' })
   @Delete(':id')
-  async remove(@Param('id') id: number) {
-    this.logger.log('Delete event request', { eventId: id });
-    await this.eventService.remove(id);
+  async remove(@Param('id') id: number, @CurrentUser() { userId }: JwtPayload) {
+    this.logger.log('Delete event request', { eventId: id, userId });
+    await this.eventService.remove(id, userId);
     return responseContainer(null, { message: 'Event deleted' });
   }
 }

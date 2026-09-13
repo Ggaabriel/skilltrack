@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Event } from './entities/event.entity';
@@ -66,24 +66,27 @@ export class EventService {
     return events;
   }
 
-  async findOne(id: number) {
-    this.logger.log('Finding event by id', { eventId: id });
+  async findOne(id: number, userId: number) {
+    this.logger.log('Finding event by id, by user', { eventId: id, userId });
     const event = await this.prisma.event.findUnique({
-      where: { id },
+      where: { id, userId },
       select,
     });
+
     if (!event) {
-      this.logger.warn('Event not found', { eventId: id });
-      return null;
+      this.logger.warn('Event not found', { eventId: id, userId });
+      throw new ForbiddenException('Event not found');
     }
-    this.logger.log('Event found', { eventId: id });
+
+    this.logger.log('Event found', { eventId: id, userId });
     return event;
   }
 
-  async update(id: number, updateEventDto: UpdateEventDto) {
+  async update(id: number, updateEventDto: UpdateEventDto, userId: number) {
     this.logger.log('Updating event', {
       eventId: id,
       updates: updateEventDto,
+      userId,
     });
 
     const data = {
@@ -97,21 +100,31 @@ export class EventService {
     };
 
     const event = await this.prisma.event.update({
-      where: { id },
+      where: { id, userId },
       data,
       select,
     });
 
-    this.logger.log('Event updated', { eventId: id });
+    if (!event) {
+      this.logger.warn('Event not found for update', { eventId: id, userId });
+      throw new ForbiddenException('Event not found');
+    }
+
+    this.logger.log('Event updated', { eventId: id, userId });
     return event;
   }
 
-  async remove(id: number) {
-    this.logger.log('Removing event', { eventId: id });
-    await this.prisma.event.delete({
-      where: { id },
+  async remove(id: number, userId: number) {
+    this.logger.log('Removing event', { eventId: id, userId });
+    const event = await this.prisma.event.delete({
+      where: { id, userId },
       select,
     });
-    this.logger.log('Event removed', { eventId: id });
+
+    if (!event) {
+      this.logger.warn('Event not found for deletion', { eventId: id, userId });
+      throw new ForbiddenException('Event not found');
+    }
+    this.logger.log('Event removed', { eventId: id, userId });
   }
 }
