@@ -4,8 +4,8 @@ import {
   IsDateString,
   IsDefined,
   IsNotEmpty,
-  IsOptional,
   IsString,
+  ValidateIf,
 } from 'class-validator';
 import type { TEventColor } from '../types/event-color.type';
 
@@ -24,8 +24,8 @@ export class UpdateEventDto extends PartialType(CreateEventDto) {
     description: 'The description of the event',
   })
   @IsString()
-  @IsOptional()
-  'description'?: string;
+  @ValidateIf((object, value) => value !== null)
+  'description': string | null;
 
   @ApiProperty({
     example: '2023-10-15T10:00:00.000Z',
