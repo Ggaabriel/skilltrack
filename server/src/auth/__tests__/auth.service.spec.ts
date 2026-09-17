@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from '../user/user.service';
-import { SessionService } from '../session/session.service';
-import { TokenService } from '../token/token.service';
+import { UserService } from '../../user/user.service';
+import { SessionService } from '../../session/session.service';
+import { TokenService } from '../../token/token.service';
 import { ConfigService } from '@nestjs/config';
 import { jest } from '@jest/globals';
-import type { AuthService as AuthServiceType } from './auth.service';
-import { RefreshTokenPayload } from './strategies/refresh-jwt-strategy';
+import type { AuthService as AuthServiceType } from '../auth.service';
+import { RefreshTokenPayload } from '../strategies/refresh-jwt-strategy';
 
 const compareMock =
   jest.fn<(data: string, encrypted: string) => Promise<boolean>>();
@@ -80,10 +80,10 @@ describe('AuthService', () => {
   let service: AuthServiceType;
 
   beforeAll(async () => {
-    const authServiceSrc = './auth.service';
+    const authServiceSrc = '../auth.service';
     const authModule = (await import(
       authServiceSrc
-    )) as typeof import('./auth.service');
+    )) as typeof import('../auth.service');
     const { AuthService: AuthServiceClass } = authModule;
 
     const module: TestingModule = await Test.createTestingModule({

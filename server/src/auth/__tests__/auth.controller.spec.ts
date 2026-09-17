@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { jest } from '@jest/globals';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { AuthCookieService } from '../auth-cookie/auth-cookie.service';
+import { AuthController } from '../auth.controller';
+import { AuthService } from '../auth.service';
+import { AuthCookieService } from '../../auth-cookie/auth-cookie.service';
 
 describe('AuthController', () => {
   let controller: AuthController;

@@ -1,13 +1,13 @@
 import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
-import { UserService } from '../user/user.service';
-import { SessionService } from '../session/session.service';
-import { TokenService } from '../token/token.service';
-import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { RefreshTokenPayload } from './strategies/refresh-jwt-strategy';
+import { PrismaService } from '../../prisma/prisma.service';
+import { UserService } from '../../user/user.service';
+import { SessionService } from '../../session/session.service';
+import { TokenService } from '../../token/token.service';
+import { AuthService } from '../auth.service';
+import { RegisterDto } from '../dto/register.dto';
+import { RefreshTokenPayload } from '../strategies/refresh-jwt-strategy';
 
 describe('AuthService Integration Tests', () => {
   let module: TestingModule;

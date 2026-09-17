@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventService } from 'src/event/event.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { jest } from '@jest/globals';
 import { EventController } from 'src/event/event.controller';
-import { CreateEventDto } from './dto/create-event.dto';
-import { Event } from './entities/event.entity';
-import { UpdateEventDto } from './dto/update-event.dto';
+import { CreateEventDto } from '../dto/create-event.dto';
+import { Event } from '../entities/event.entity';
+import { UpdateEventDto } from '../dto/update-event.dto';
 
 describe('EventService Integration Tests', () => {
   let module: TestingModule;

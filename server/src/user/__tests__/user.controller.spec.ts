@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { jest } from '@jest/globals';
-import { UserController } from './user.controller';
-import { UserService } from './user.service';
-import { EventService } from '../event/event.service';
+import { UserController } from '../user.controller';
+import { UserService } from '../user.service';
+import { EventService } from '../../event/event.service';
 
 type UserView = {
   id: number;

@@ -1,12 +1,12 @@
 import { jest } from '@jest/globals';
 import { ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../prisma/prisma.service';
-import type { EventService as EventServiceType } from './event.service';
-import { EventService } from './event.service';
-import type { UpdateEventDto } from './dto/update-event.dto';
-import type { Event as EventEntity } from './entities/event.entity';
-import type { TEventColor } from './types/event-color.type';
+import { PrismaService } from '../../prisma/prisma.service';
+import type { EventService as EventServiceType } from '../event.service';
+import { EventService } from '../event.service';
+import type { UpdateEventDto } from '../dto/update-event.dto';
+import type { Event as EventEntity } from '../entities/event.entity';
+import type { TEventColor } from '../types/event-color.type';
 
 type EventSelect = {
   id: true;
