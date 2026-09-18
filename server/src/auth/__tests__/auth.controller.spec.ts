@@ -37,7 +37,7 @@ describe('AuthController', () => {
     authService.register.mockResolvedValue({
       accessToken: 'access',
       refreshToken: 'refresh',
-    });
+    } as never);
     const response = {};
 
     await expect(controller.register(dto, response as never)).resolves.toEqual({
@@ -55,7 +55,7 @@ describe('AuthController', () => {
     authService.login.mockResolvedValue({
       accessToken: 'access',
       refreshToken: 'refresh',
-    });
+    } as never);
     const response = {};
 
     await expect(
@@ -75,7 +75,7 @@ describe('AuthController', () => {
     authService.refresh.mockResolvedValue({
       accessToken: 'new-access',
       refreshToken: 'new-refresh',
-    });
+    } as never);
     const response = {};
     const request = { cookies: { refreshToken: 'refresh' }, user: payload };
 
@@ -100,7 +100,7 @@ describe('AuthController', () => {
 
   it('should logout and clear the refresh cookie', async () => {
     const payload = { userId: 1, sessionId: 'session' };
-    authService.logout.mockResolvedValue(undefined);
+    authService.logout.mockResolvedValue(undefined as never);
     const response = {};
 
     await expect(

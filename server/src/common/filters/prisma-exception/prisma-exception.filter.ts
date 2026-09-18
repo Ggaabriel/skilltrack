@@ -19,7 +19,7 @@ export class PrismaExceptionFilter implements ExceptionFilter {
   ) {
     response.status(statusCode).json({
       ok: false,
-      code: statusCode,
+      status: statusCode,
       message,
     });
   }

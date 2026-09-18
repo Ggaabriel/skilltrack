@@ -129,9 +129,7 @@ describe('AuthService Integration Tests', () => {
     const dto = registerDto('refresh-error');
     const created = await userService.create(dto);
     createdUserIds.push(created.id);
-    const result = await authService.login(
-      await userService.findByEmail(dto.email),
-    );
+    await authService.login(await userService.findByEmail(dto.email));
     const session = (
       await prisma.session.findMany({
         where: { userId: created.id },

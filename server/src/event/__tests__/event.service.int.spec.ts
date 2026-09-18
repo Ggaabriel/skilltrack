@@ -117,8 +117,10 @@ describe('EventService Integration Tests', () => {
       await expect(
         eventController.findOne(created.id, jwtPayload),
       ).resolves.toMatchObject({
-        id: created.id,
-        title: 'Planning',
+        data: {
+          id: created.id,
+          title: 'Planning',
+        },
       });
     });
 

@@ -16,8 +16,8 @@
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
     "test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch",
     "test:cov": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
-    "test:debug": "NODE_OPTIONS='--experimental-vm-modules' node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "NODE_OPTIONS='--experimental-vm-modules' jest --config ./test/jest-e2e.json"
+    "test:debug": "JEST_SHOW_LOGS=1 NODE_OPTIONS='--experimental-vm-modules' node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand --silent=false",
+    "test:e2e": "NODE_OPTIONS='--experimental-vm-modules' jest --config package.json --testRegex '.*\\.e2e\\.spec\\.ts$'"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -74,6 +74,7 @@
   },
   "jest": {
     "verbose": true,
+    "silent": true,
     "rootDir": ".",
     "moduleFileExtensions": [
       "js",
@@ -98,5 +99,26 @@
     },
     "testEnvironment": "node",
     "transformIgnorePatterns": []
+  },
+  "jest-e2e": {
+    "rootDir": ".",
+    "silent": true,
+    "testRegex": ".*\\.e2e\\.spec\\.ts$",
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "transform": {
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "useESM": true,
+          "tsconfig": "./tsconfig.spec.json"
+        }
+      ]
+    },
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/src/$1"
+    },
+    "testEnvironment": "node"
   }
 }

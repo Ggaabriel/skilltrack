@@ -29,7 +29,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
     res.status(status).json({
       ok: false,
-      code: status,
+      status,
       message,
     });
   }

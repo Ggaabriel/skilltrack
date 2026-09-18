@@ -1,22 +1,17 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import { configureApp } from './configure-app';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ResponseInterceptor } from './common/interceptors/responce/responce.interceptor';
-import { HttpExceptionFilter } from './common/filters/http-exception/http-exception.filter';
-import { PrismaExceptionFilter } from './common/filters/prisma-exception/prisma-exception.filter';
-import { CustomValidationPipe } from './common/pipes/custom-validation/custom-validation.pipe';
-import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule, { logger });
+  const app: NestExpressApplication = await NestFactory.create(AppModule, {
+    logger,
+  });
   app.enableCors({ origin: 'http://localhost:5173', credentials: true });
-  app.use(cookieParser());
-  app.useGlobalInterceptors(new ResponseInterceptor());
-  app.useGlobalFilters(new PrismaExceptionFilter(), new HttpExceptionFilter());
-  app.useGlobalPipes(new CustomValidationPipe());
-  app.setGlobalPrefix('api');
+  configureApp(app);
   const config = new DocumentBuilder()
     .setTitle('SkillTrack API')
     .setDescription('API documentation for SkillTrack')

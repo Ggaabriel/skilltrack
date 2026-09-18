@@ -1,7 +1,13 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Event } from './entities/event.entity';
+import { Prisma } from 'src/generated/prisma/client';
 const select = {
   id: true,
   title: true,
@@ -116,15 +122,31 @@ export class EventService {
 
   async remove(id: number, userId: number) {
     this.logger.log('Removing event', { eventId: id, userId });
-    const event = await this.prisma.event.delete({
-      where: { id, userId },
-      select,
-    });
 
-    if (!event) {
-      this.logger.warn('Event not found for deletion', { eventId: id, userId });
-      throw new ForbiddenException('Event not found');
+    try {
+      const event = await this.prisma.event.delete({
+        where: { id, userId },
+        select,
+      });
+
+      if (!event) {
+        this.logger.warn('Event not found for deletion', {
+          eventId: id,
+          userId,
+        });
+        throw new ForbiddenException('Event not found');
+      }
+
+      this.logger.log('Event removed', { eventId: id, userId });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException('Event not found');
+      }
+
+      throw error;
     }
-    this.logger.log('Event removed', { eventId: id, userId });
   }
 }

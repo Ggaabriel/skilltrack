@@ -50,9 +50,15 @@ export class EventController {
 
   @ApiOperation({ summary: 'Get a specific event by ID' })
   @Get(':id')
-  findOne(@Param('id') id: number, @CurrentUser() { userId }: JwtPayload) {
+  async findOne(
+    @Param('id') id: number,
+    @CurrentUser() { userId }: JwtPayload,
+  ) {
     this.logger.log('Find event request', { eventId: id });
-    return this.eventService.findOne(id, userId);
+
+    const event = await this.eventService.findOne(id, userId);
+
+    return responseContainer(event);
   }
 
   @ApiOperation({ summary: 'Update a specific event by ID' })

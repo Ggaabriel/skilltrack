@@ -46,8 +46,6 @@ export class NotificationsController {
 
   @Post('test')
   async test(@CurrentUser() user: JwtPayload) {
-    console.log('Notifications controller: user jwt: ', user);
-
     await this.notificationsService.sendTestNotification(user.userId);
     return responseContainer(null, { message: 'Test notification sent' });
   }
