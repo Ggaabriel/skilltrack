@@ -8,7 +8,7 @@ import {
   UseGuards,
   Query,
 } from '@nestjs/common';
-import { NotificationsService } from './notifications.service';
+import { NotificationsService } from './notification.service';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { PushSubscriptionDto } from './dto/push-subscription.dto';

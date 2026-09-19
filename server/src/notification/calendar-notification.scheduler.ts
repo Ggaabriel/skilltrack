@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotificationsService } from './notifications.service';
+import { NotificationsService } from './notification.service';
 
 @Injectable()
 export class CalendarNotificationScheduler {
