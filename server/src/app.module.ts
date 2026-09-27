@@ -35,23 +35,23 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
       driver: ApolloDriver,
       autoSchemaFile: true,
 
-      formatError: (error) => {
+      formatError: (formattedError) => {
         const status =
-          error.extensions?.code === 'GRAPHQL_PARSE_FAILED' ||
-          error.extensions?.code === 'GRAPHQL_VALIDATION_FAILED'
+          formattedError.extensions?.code === 'GRAPHQL_PARSE_FAILED' ||
+          formattedError.extensions?.code === 'GRAPHQL_VALIDATION_FAILED'
             ? 400
-            : typeof error.extensions?.status === 'number'
-              ? error.extensions.status
+            : typeof formattedError.extensions?.status === 'number'
+              ? formattedError.extensions.status
               : 500;
 
-        const stacktrace = error.extensions?.stacktrace;
+        const stacktrace = formattedError.extensions?.stacktrace;
 
         return {
-          message: error.message,
+          message: formattedError.message,
           ok: false,
           status,
           stack: Array.isArray(stacktrace) ? stacktrace.join('\n') : null,
-          response: error.extensions?.response ?? null,
+          response: formattedError.extensions?.response ?? null,
         };
       },
     }),
