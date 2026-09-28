@@ -7,9 +7,14 @@ import {
 import { Response } from 'express';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import type { GqlContextType } from '@nestjs/graphql';
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<T, any> {
   intercept(context: ExecutionContext, next: CallHandler<T>): Observable<any> {
+    if (context.getType<GqlContextType>() === 'graphql') {
+      return next.handle();
+    }
+
     const response = context.switchToHttp().getResponse<Response>();
     return next.handle().pipe(
       map((project: T) => {

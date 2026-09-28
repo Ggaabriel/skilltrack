@@ -13,6 +13,36 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { CourseModule } from './course/course.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import type { GraphQLFormattedError } from 'graphql';
+
+export function normalizeApolloError(error: GraphQLFormattedError) {
+  const extensions = error.extensions ?? {};
+  const statusFromExtensions = extensions.status ?? extensions.statusCode;
+  let status =
+    typeof statusFromExtensions === 'number' ? statusFromExtensions : 500;
+
+  if (typeof statusFromExtensions !== 'number') {
+    switch (extensions.code) {
+      case 'GRAPHQL_PARSE_FAILED':
+      case 'GRAPHQL_VALIDATION_FAILED':
+      case 'BAD_USER_INPUT':
+        status = 400;
+        break;
+      case 'UNAUTHENTICATED':
+        status = 401;
+        break;
+      case 'FORBIDDEN':
+        status = 403;
+        break;
+    }
+  }
+
+  return {
+    message: error.message,
+    ok: false,
+    status,
+  };
+}
 
 @Module({
   imports: [
@@ -35,25 +65,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
       driver: ApolloDriver,
       autoSchemaFile: true,
 
-      formatError: (formattedError) => {
-        const status =
-          formattedError.extensions?.code === 'GRAPHQL_PARSE_FAILED' ||
-          formattedError.extensions?.code === 'GRAPHQL_VALIDATION_FAILED'
-            ? 400
-            : typeof formattedError.extensions?.status === 'number'
-              ? formattedError.extensions.status
-              : 500;
-
-        const stacktrace = formattedError.extensions?.stacktrace;
-
-        return {
-          message: formattedError.message,
-          ok: false,
-          status,
-          stack: Array.isArray(stacktrace) ? stacktrace.join('\n') : null,
-          response: formattedError.extensions?.response ?? null,
-        };
-      },
+      formatError: normalizeApolloError,
     }),
   ],
 })
