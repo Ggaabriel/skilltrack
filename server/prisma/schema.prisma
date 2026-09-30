@@ -26,6 +26,7 @@ model User {
   sessions          Session[]
   courses           Course[]
   pushSubscriptions PushSubscription[]
+  nodeProgress      NodeProgress[]
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
@@ -78,7 +79,7 @@ model PushSubscription {
 }
 
 model Course {
-  id          Int    @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   title       String
   description String?
   type        String
@@ -101,9 +102,32 @@ model Node {
   position Int
 
   courseId Int
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course   Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
   parentId Int?
+  parent   Node?          @relation("NodeTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Node[]         @relation("NodeTree")
+  progress NodeProgress[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([courseId, parentId])
+}
+
+model NodeProgress {
+  id          Int       @id @default(autoincrement())
+  percentage  Int       @default(0)
+  completedAt DateTime?
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  nodeId Int
+  node   Node @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, nodeId])
+  @@index([nodeId])
 }

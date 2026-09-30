@@ -1,4 +1,4 @@
-import { ParseIntPipe } from '@nestjs/common';
+import { ParseIntPipe, UseGuards } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 import { CourseService } from './course.service';
@@ -12,28 +12,33 @@ import {
   DeleteCourseResponse,
 } from './schemas/course-response.schema';
 import { graphqlSuccess } from '../common/graphql/graphql-response';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { JwtPayload } from '../auth/types/jwt-payload';
 
 @Resolver(() => Course)
+@UseGuards(JwtAuthGuard)
 export class CourseResolver {
   constructor(private readonly courseService: CourseService) {}
 
   @Query(() => CoursesResponse)
-  async courses() {
-    return graphqlSuccess(await this.courseService.findAll());
+  async courses(@CurrentUser() { userId }: JwtPayload) {
+    return graphqlSuccess(await this.courseService.findAll(userId));
   }
 
   @Query(() => CourseResponse)
-  async course(@Args('id', { type: () => ID }, ParseIntPipe) id: number) {
-    return graphqlSuccess(await this.courseService.findOne(id));
+  async course(
+    @Args('id', { type: () => ID }, ParseIntPipe) id: number,
+    @CurrentUser() { userId }: JwtPayload,
+  ) {
+    return graphqlSuccess(await this.courseService.findOne(id, userId));
   }
 
   @Mutation(() => CourseResponse)
   async createCourse(
     @Args('input', { type: () => CreateCourseInput }) input: CreateCourseInput,
+    @CurrentUser() { userId }: JwtPayload,
   ) {
-    // временно
-    const userId = 358;
-
     return graphqlSuccess(await this.courseService.create(userId, input));
   }
 
@@ -41,18 +46,16 @@ export class CourseResolver {
   async updateCourse(
     @Args('id', { type: () => ID }, ParseIntPipe) id: number,
     @Args('input', { type: () => UpdateCourseInput }) input: UpdateCourseInput,
+    @CurrentUser() { userId }: JwtPayload,
   ) {
-    // временно
-    const userId = 358;
-
     return graphqlSuccess(await this.courseService.update(id, userId, input));
   }
 
   @Mutation(() => DeleteCourseResponse)
-  async deleteCourse(@Args('id', { type: () => ID }, ParseIntPipe) id: number) {
-    // временно
-    const userId = 358;
-
+  async deleteCourse(
+    @Args('id', { type: () => ID }, ParseIntPipe) id: number,
+    @CurrentUser() { userId }: JwtPayload,
+  ) {
     return graphqlSuccess(await this.courseService.remove(id, userId));
   }
 }

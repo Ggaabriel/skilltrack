@@ -10,10 +10,10 @@ describe('CreateCourseInput', () => {
       type: CourseType.STEP_BY_STEP,
     };
 
-    const transformed = await new CustomValidationPipe().transform(input, {
+    const transformed = (await new CustomValidationPipe().transform(input, {
       type: 'custom',
       metatype: CreateCourseInput,
-    });
+    })) as CreateCourseInput;
 
     expect(transformed).toMatchObject(input);
   });

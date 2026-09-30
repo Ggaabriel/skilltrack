@@ -1,21 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+const courseSelect = {
+  id: true,
+  title: true,
+  description: true,
+  type: true,
+  cover: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
 @Injectable()
 export class CourseService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
+  findAll(userId: number) {
     return this.prisma.course.findMany({
+      where: { userId },
+      select: courseSelect,
       orderBy: {
         createdAt: 'desc',
       },
     });
   }
 
-  findOne(id: number) {
-    return this.prisma.course.findUnique({
-      where: { id },
+  findOne(id: number, userId: number) {
+    return this.prisma.course.findFirst({
+      where: { id, userId },
+      select: courseSelect,
     });
   }
 
@@ -29,6 +42,7 @@ export class CourseService {
     },
   ) {
     return this.prisma.course.create({
+      select: courseSelect,
       data: {
         userId,
         title: data.title,
@@ -55,6 +69,7 @@ export class CourseService {
         userId,
       },
       data,
+      select: courseSelect,
     });
   }
 

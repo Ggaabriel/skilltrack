@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { UserModule } from './user/user.module';
 import { EventModule } from './event/event.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -11,9 +12,14 @@ import { NotificationsModule } from './notification/notification.module';
 import jwtConfig from './config/jwt.config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CourseModule } from './course/course.module';
+import { NodeModule } from './node/node.module';
+import { NodeProgressModule } from './node-progress/node-progress.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import type { GraphQLFormattedError } from 'graphql';
+import type { Request } from 'express';
+import { GqlHttpExceptionFilter } from './common/filters/gql-http-exception/gql-http-exception.filter';
+import { GqlPrismaExceptionFilter } from './common/filters/gql-prisma-exception/gql-prisma-exception.filter';
 
 export function normalizeApolloError(error: GraphQLFormattedError) {
   const extensions = error.extensions ?? {};
@@ -61,12 +67,25 @@ export function normalizeApolloError(error: GraphQLFormattedError) {
     NotificationsModule,
     ScheduleModule.forRoot(),
     CourseModule,
+    NodeModule,
+    NodeProgressModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
+      context: ({ req }: { req: Request }) => ({ req }),
 
       formatError: normalizeApolloError,
     }),
+  ],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: GqlHttpExceptionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GqlPrismaExceptionFilter,
+    },
   ],
 })
 export class AppModule {}
