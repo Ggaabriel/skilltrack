@@ -91,8 +91,52 @@ model Course {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   nodes     Node[]
+  tags      Tag[]
+  skills    Skill[]
+  medias    Media[]
 
   @@index([userId])
+}
+
+model Tag {
+  id       Int    @id @default(autoincrement())
+  name     String
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([courseId, name])
+  @@index([courseId])
+}
+
+model Skill {
+  id       Int    @id @default(autoincrement())
+  name     String
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([courseId, name])
+  @@index([courseId])
+}
+
+model Media {
+  id       Int     @id @default(autoincrement())
+  name     String
+  url      String
+  mimeType String?
+  courseId Int
+  course   Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([courseId, name])
+  @@index([courseId])
 }
 
 model Node {

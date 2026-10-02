@@ -14,6 +14,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { CourseModule } from './course/course.module';
 import { NodeModule } from './node/node.module';
 import { NodeProgressModule } from './node-progress/node-progress.module';
+import { TagModule } from './tag/tag.module';
+import { SkillModule } from './skill/skill.module';
+import { MediaModule } from './media/media.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import type { GraphQLFormattedError } from 'graphql';
@@ -69,6 +72,9 @@ export function normalizeApolloError(error: GraphQLFormattedError) {
     CourseModule,
     NodeModule,
     NodeProgressModule,
+    TagModule,
+    SkillModule,
+    MediaModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,

@@ -4,6 +4,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { configureApp } from './configure-app';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { join } from 'node:path';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -12,6 +13,10 @@ async function bootstrap() {
   });
   app.enableCors({ origin: 'http://localhost:5173', credentials: true });
   configureApp(app);
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+    index: false,
+  });
   const config = new DocumentBuilder()
     .setTitle('SkillTrack API')
     .setDescription('API documentation for SkillTrack')
