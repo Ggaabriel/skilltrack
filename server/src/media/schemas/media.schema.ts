@@ -11,7 +11,7 @@ export class Media {
   @Field()
   url!: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   mimeType!: string | null;
 
   @Field(() => ID)

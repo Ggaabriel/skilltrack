@@ -1,5 +1,5 @@
 import * as React from "react";
-import { IconCalendarEvent, IconCode } from "@tabler/icons-react";
+import { IconCalendarEvent, IconCode, IconBook } from "@tabler/icons-react";
 
 import {
   Sidebar,
@@ -30,12 +30,19 @@ const data = {
       icon: IconCalendarEvent,
       access: Access.AUTHENTICATED,
     },
+    {
+      title: "Courses",
+      url: Routes.COURSES,
+      icon: IconBook,
+      access: Access.AUTHENTICATED,
+    },
   ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: user } = useUserMeQuery();
   const openAuth = useOpenAuth();
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -53,9 +60,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
         <NavMain items={data.navMain} />
       </SidebarContent>
+
       <SidebarFooter>
         <Can access={Access.AUTHENTICATED} fallback={<NavUserSkeleton />}>
           <NavUser user={user!} />
@@ -64,7 +73,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <Can access={Access.GUEST}>
           <Button onClick={() => openAuth("login")}>
             <LogIn />
-
             <span className="group-data-[collapsible=icon]:hidden">LogIn</span>
           </Button>
         </Can>
