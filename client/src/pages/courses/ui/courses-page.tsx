@@ -1,6 +1,3 @@
-import { Plus } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Tabs,
@@ -8,6 +5,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { CreateCourseDialog } from "@/features/course/create-course";
 
 export function CoursesPage() {
   return (
@@ -15,16 +13,16 @@ export function CoursesPage() {
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Courses</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Courses
+            </h1>
+
             <p className="text-muted-foreground">
               Manage your courses and discover new ones.
             </p>
           </div>
 
-          <Button>
-            <Plus />
-            Create course
-          </Button>
+          <CreateCourseDialog />
         </div>
 
         <Tabs defaultValue="my-courses">

@@ -78,6 +78,7 @@ export function normalizeApolloError(error: GraphQLFormattedError) {
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
+      useGlobalPrefix: true,
       context: ({ req }: { req: Request }) => ({ req }),
 
       formatError: normalizeApolloError,

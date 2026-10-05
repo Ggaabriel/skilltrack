@@ -2,10 +2,14 @@ import { env } from "../config/env";
 import { authTokenStore } from "./auth/authToken";
 import { createRefresher } from "./auth/refresh";
 import { createHttpClient } from "./client";
-import {
-  createAuthInterceptor,
-} from "./interceptors/auth.interceptor";
+import { createAuthInterceptor } from "./interceptors/auth.interceptor";
 import { sendRequest } from "./transport";
+export { graphqlClient } from "./gql/client";
+export type {
+  GraphQLError,
+  GraphQLRequestVariables,
+  GraphQLResponse,
+} from "./gql/types";
 
 const baseURL = env.VITE_API_BASE_URL;
 

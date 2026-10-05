@@ -8,6 +8,7 @@ export type ApiErrorCode =
   | "CONFLICT"
   | "VALIDATION"
   | "SERVER"
+  | "GRAPHQL"
   | "UNKNOWN";
 
 const STATUS_MAP: Record<number, ApiErrorCode> = {
@@ -23,22 +24,50 @@ const ERROR_CONFIG: Record<
   ApiErrorCode,
   { layer: "expected" | "operational" | "bug"; defaultMessage: string }
 > = {
-  BAD_REQUEST: { layer: "expected", defaultMessage: "Bad request." },
+  BAD_REQUEST: {
+    layer: "expected",
+    defaultMessage: "Bad request.",
+  },
   UNAUTHORIZED: {
     layer: "expected",
     defaultMessage: "Authentication required.",
   },
-  FORBIDDEN: { layer: "expected", defaultMessage: "Access forbidden." },
-  NOT_FOUND: { layer: "expected", defaultMessage: "Resource not found." },
-  CONFLICT: { layer: "expected", defaultMessage: "Conflict detected." },
-  VALIDATION: { layer: "expected", defaultMessage: "Validation failed." },
+  FORBIDDEN: {
+    layer: "expected",
+    defaultMessage: "Access forbidden.",
+  },
+  NOT_FOUND: {
+    layer: "expected",
+    defaultMessage: "Resource not found.",
+  },
+  CONFLICT: {
+    layer: "expected",
+    defaultMessage: "Conflict detected.",
+  },
+  VALIDATION: {
+    layer: "expected",
+    defaultMessage: "Validation failed.",
+  },
+  GRAPHQL: {
+    layer: "expected",
+    defaultMessage: "GraphQL request failed.",
+  },
   NETWORK: {
     layer: "operational",
     defaultMessage: "Network connection failed.",
   },
-  TIMEOUT: { layer: "operational", defaultMessage: "Request timed out." },
-  SERVER: { layer: "operational", defaultMessage: "Server error occurred." },
-  UNKNOWN: { layer: "bug", defaultMessage: "An unknown error occurred." },
+  TIMEOUT: {
+    layer: "operational",
+    defaultMessage: "Request timed out.",
+  },
+  SERVER: {
+    layer: "operational",
+    defaultMessage: "Server error occurred.",
+  },
+  UNKNOWN: {
+    layer: "bug",
+    defaultMessage: "An unknown error occurred.",
+  },
 };
 
 export function codeFromStatus(status: number): ApiErrorCode {
@@ -67,6 +96,7 @@ export class ApiError extends Error {
     const message = init.message ?? ERROR_CONFIG[code].defaultMessage;
 
     super(message);
+
     this.name = "ApiError";
     this.status = init.status;
     this.code = code;
@@ -74,6 +104,7 @@ export class ApiError extends Error {
     if (init.payload !== undefined) {
       this.payload = init.payload;
     }
+
     if (init.cause !== undefined) {
       this.cause = init.cause;
     }

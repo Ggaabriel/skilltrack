@@ -1,0 +1,1 @@
+export { CreateCourseDialog } from "./ui/create-course-dialog";
