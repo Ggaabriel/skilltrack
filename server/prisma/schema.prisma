@@ -90,38 +90,53 @@ model Course {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  nodes     Node[]
-  tags      Tag[]
-  skills    Skill[]
-  medias    Media[]
+
+  nodes  Node[]
+  tags   CourseTag[]
+  skills CourseSkill[]
+  medias Media[]
 
   @@index([userId])
 }
 
 model Tag {
-  id       Int    @id @default(autoincrement())
-  name     String
-  courseId Int
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  id      Int         @id @default(autoincrement())
+  name    String      @unique
+  courses CourseTag[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
 
-  @@unique([courseId, name])
-  @@index([courseId])
+model CourseTag {
+  courseId Int
+  tagId    Int
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, tagId])
+  @@index([tagId])
 }
 
 model Skill {
-  id       Int    @id @default(autoincrement())
-  name     String
-  courseId Int
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  id      Int           @id @default(autoincrement())
+  name    String        @unique
+  courses CourseSkill[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
 
-  @@unique([courseId, name])
-  @@index([courseId])
+model CourseSkill {
+  courseId Int
+  skillId  Int
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  skill  Skill  @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, skillId])
+  @@index([skillId])
 }
 
 model Media {

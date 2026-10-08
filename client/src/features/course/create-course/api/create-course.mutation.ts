@@ -3,8 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { graphqlClient } from "@/shared/api";
 import { courseQueryKeys } from "@/entities/course/api/course.queries";
 
-import type { CreateCourseFormValues } from "../model/schemas";
 import type { Course } from "@/entities/course/api/types";
+import type { CreateCourseFormValues } from "../model/schemas";
 
 type CreateCourseMutationResponse = {
   createCourse: {
@@ -34,17 +34,20 @@ const CREATE_COURSE_MUTATION = `
   }
 `;
 
-async function createCourse(values: CreateCourseFormValues): Promise<Course> {
-  const response = await graphqlClient.request<CreateCourseMutationResponse>(
-    CREATE_COURSE_MUTATION,
-    {
-      input: {
-        title: values.title,
-        description: values.description || undefined,
-        type: values.type,
+async function createCourse(
+  values: CreateCourseFormValues,
+): Promise<Course> {
+  const response =
+    await graphqlClient.request<CreateCourseMutationResponse>(
+      CREATE_COURSE_MUTATION,
+      {
+        input: {
+          title: values.title,
+          description: values.description || null,
+          type: values.type,
+        },
       },
-    },
-  );
+    );
 
   return response.createCourse.data;
 }
@@ -57,7 +60,7 @@ export function useCreateCourseMutation() {
 
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: courseQueryKeys.all,
+        queryKey: courseQueryKeys.list(),
       });
     },
   });

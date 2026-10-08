@@ -55,22 +55,23 @@ export function CreateCourseDialog() {
   });
 
   async function onSubmit(values: CreateCourseFormValues) {
-    try {
-      const course = await createCourseMutation.mutateAsync(values);
+    const course = await createCourseMutation.mutateAsync(values);
 
-      form.reset();
-      setOpen(false);
+    form.reset();
+    createCourseMutation.reset();
+    setOpen(false);
 
-      navigate(`${Routes.COURSES}/${course.id}/builder`);
-    } catch {
-      // Ошибка уже находится в mutation.error
-    }
+    navigate(`${Routes.COURSES}/${course.id}/builder`);
   }
 
   function handleOpenChange(nextOpen: boolean) {
+    if (createCourseMutation.isPending) {
+      return;
+    }
+
     setOpen(nextOpen);
 
-    if (!nextOpen && !createCourseMutation.isPending) {
+    if (!nextOpen) {
       form.reset();
       createCourseMutation.reset();
     }
@@ -88,8 +89,9 @@ export function CreateCourseDialog() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create course</DialogTitle>
+
           <DialogDescription>
-            Create a new course and start building it.
+            Create a course and start building its content.
           </DialogDescription>
         </DialogHeader>
 
@@ -108,6 +110,7 @@ export function CreateCourseDialog() {
                   <FormControl>
                     <Input
                       placeholder="e.g. React fundamentals"
+                      disabled={createCourseMutation.isPending}
                       {...field}
                     />
                   </FormControl>
@@ -129,6 +132,7 @@ export function CreateCourseDialog() {
                       placeholder="What is this course about?"
                       className="resize-none"
                       rows={4}
+                      disabled={createCourseMutation.isPending}
                       {...field}
                     />
                   </FormControl>
@@ -148,6 +152,7 @@ export function CreateCourseDialog() {
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
+                    disabled={createCourseMutation.isPending}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -191,7 +196,10 @@ export function CreateCourseDialog() {
                 Cancel
               </Button>
 
-              <Button type="submit" disabled={createCourseMutation.isPending}>
+              <Button
+                type="submit"
+                disabled={createCourseMutation.isPending}
+              >
                 {createCourseMutation.isPending
                   ? "Creating..."
                   : "Create course"}

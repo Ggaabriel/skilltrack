@@ -1,4 +1,4 @@
-import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
+import { Field, ID, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
 export class Tag {
@@ -7,9 +7,6 @@ export class Tag {
 
   @Field()
   name!: string;
-
-  @Field(() => ID)
-  courseId!: number;
 
   @Field()
   createdAt!: Date;

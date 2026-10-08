@@ -1,14 +1,8 @@
-import { Field, InputType, Int } from '@nestjs/graphql';
-import { IsDefined, IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import { Field, InputType } from '@nestjs/graphql';
+import { IsDefined, IsNotEmpty, IsString } from 'class-validator';
 
 @InputType()
 export class CreateTagInput {
-  @Field(() => Int)
-  @IsDefined()
-  @IsInt()
-  @Min(1)
-  courseId!: number;
-
   @Field()
   @IsDefined()
   @IsString()

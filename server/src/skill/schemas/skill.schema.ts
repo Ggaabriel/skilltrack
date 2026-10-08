@@ -8,9 +8,6 @@ export class Skill {
   @Field()
   name!: string;
 
-  @Field(() => ID)
-  courseId!: number;
-
   @Field()
   createdAt!: Date;
 
