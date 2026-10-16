@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ChevronRight,
   FilePlus2,
@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
 import { useCourseQuery } from "@/entities/course/api/course.queries";
 import { useTagsQuery } from "@/entities/tag/api/tag.queries";
 import {
@@ -37,39 +38,65 @@ import {
 import { cn } from "@/lib/utils";
 import { CourseTagsEditor } from "@/features/course/edit-course-tags";
 
-function findNode(nodes: CourseNode[], id: string | null): CourseNode | null {
+function findNode(
+  nodes: CourseNode[],
+  id: string | null,
+): CourseNode | null {
+  if (!id) return null;
+
   for (const node of nodes) {
     if (node.id === id) return node;
+
     const child = findNode(node.children, id);
+
     if (child) return child;
   }
+
   return null;
 }
 
 export function CourseBuilderPage() {
   const { courseId = "" } = useParams();
+
   const numericCourseId = Number(courseId);
   const validCourseId =
     Number.isInteger(numericCourseId) && numericCourseId > 0;
+
   const course = useCourseQuery(courseId);
-  const nodes = useNodesQuery(validCourseId ? numericCourseId : null);
+  const nodes = useNodesQuery(
+    validCourseId ? numericCourseId : null,
+  );
+
   const createNode = useCreateNodeMutation(numericCourseId);
   const updateNode = useUpdateNodeMutation(numericCourseId);
   const deleteNode = useDeleteNodeMutation(numericCourseId);
-  const { data: tags = [], isLoading: isTagsLoading } = useTagsQuery();
-  const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
-  const [nodeToDelete, setNodeToDelete] = useState<CourseNode | null>(null);
+
+  const { data: tags = [], isLoading: isTagsLoading } =
+    useTagsQuery();
+
+  const [activeNodeId, setActiveNodeId] = useState<string | null>(
+    null,
+  );
+  const [nodeToDelete, setNodeToDelete] =
+    useState<CourseNode | null>(null);
+
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
 
   const activeNode = useMemo(
     () => findNode(nodes.data ?? [], activeNodeId),
     [nodes.data, activeNodeId],
   );
 
-  useEffect(() => {
-    if (nodes.data && activeNodeId && !findNode(nodes.data, activeNodeId)) {
-      setActiveNodeId(nodes.data[0]?.id ?? null);
-    }
-  }, [nodes.data, activeNodeId]);
+  /**
+   * Выбирает узел и загружает его данные в локальный черновик.
+   * Синхронизация выполняется явно, без useEffect.
+   */
+  function selectNode(node: CourseNode) {
+    setActiveNodeId(node.id);
+    setTitle(node.title);
+    setContent(node.content);
+  }
 
   if (!validCourseId) {
     return (
@@ -80,20 +107,34 @@ export function CourseBuilderPage() {
     );
   }
 
-  if (course.isLoading) return <BuilderSkeleton />;
+  if (course.isLoading) {
+    return <BuilderSkeleton />;
+  }
+
   if (course.isError) {
     return (
       <BuilderMessage
         title="Could not load course"
         description={course.error.message}
-        retry={() => course.refetch()}
+        retry={() => void course.refetch()}
       />
     );
   }
-  if (!course.data) return null;
 
-  const addNode = (parent: CourseNode | null) => {
-    const siblings = parent ? parent.children : (nodes.data ?? []);
+  if (!course.data) {
+    return (
+      <BuilderMessage
+        title="Course not found"
+        description="The course does not exist or is not available to you."
+      />
+    );
+  }
+
+  function addNode(parent: CourseNode | null) {
+    const siblings = parent
+      ? parent.children
+      : (nodes.data ?? []);
+
     createNode.mutate(
       {
         title: "Untitled node",
@@ -102,23 +143,55 @@ export function CourseBuilderPage() {
         parentId: parent ? Number(parent.id) : null,
       },
       {
-        onSuccess: (node) => setActiveNodeId(node.id),
+        onSuccess: (node) => {
+          selectNode(node);
+          toast.success("Node created");
+        },
         onError: (error) => toast.error(error.message),
       },
     );
-  };
+  }
 
-  const confirmDelete = () => {
+  function confirmDelete() {
     if (!nodeToDelete) return;
+
+    const deletingActiveNode =
+      activeNodeId === nodeToDelete.id;
+
     deleteNode.mutate(nodeToDelete.id, {
       onSuccess: () => {
-        if (activeNodeId === nodeToDelete.id) setActiveNodeId(null);
+        if (deletingActiveNode) {
+          setActiveNodeId(null);
+          setTitle("");
+          setContent("");
+        }
+
         setNodeToDelete(null);
         toast.success("Node deleted");
       },
       onError: (error) => toast.error(error.message),
     });
-  };
+  }
+
+  function saveActiveNode(input: {
+    title: string;
+    content: string;
+  }) {
+    if (!activeNode) return;
+
+    updateNode.mutate(
+      {
+        id: activeNode.id,
+        input,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Node saved");
+        },
+        onError: (error) => toast.error(error.message),
+      },
+    );
+  }
 
   return (
     <main className="flex min-h-0 flex-1 flex-col p-4 md:p-6">
@@ -128,12 +201,14 @@ export function CourseBuilderPage() {
             <h1 className="text-2xl font-semibold tracking-tight">
               {course.data.title}
             </h1>
+
             {course.data.description && (
               <p className="text-sm text-muted-foreground">
                 {course.data.description}
               </p>
             )}
           </div>
+
           <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
             {course.data.type}
           </span>
@@ -143,6 +218,7 @@ export function CourseBuilderPage() {
           <section className="flex min-h-0 flex-col border-b lg:border-r lg:border-b-0">
             <div className="flex items-center justify-between border-b p-3">
               <h2 className="font-medium">Course tree</h2>
+
               <Button
                 size="icon"
                 variant="ghost"
@@ -157,27 +233,31 @@ export function CourseBuilderPage() {
                 )}
               </Button>
             </div>
+
             <ScrollArea className="min-h-0 flex-1 p-2">
               {nodes.isLoading && <TreeSkeleton />}
+
               {nodes.isError && (
                 <p className="p-2 text-sm text-destructive">
                   {nodes.error.message}
                 </p>
               )}
+
               {!nodes.isLoading &&
                 !nodes.isError &&
                 nodes.data?.length === 0 && (
                   <div className="p-4 text-center text-sm text-muted-foreground">
-                    No nodes yet. Add the first one to start outlining the
-                    course.
+                    No nodes yet. Add the first one to start
+                    outlining the course.
                   </div>
                 )}
+
               {nodes.data?.map((node) => (
                 <TreeNode
                   key={node.id}
                   node={node}
                   activeId={activeNodeId}
-                  onSelect={setActiveNodeId}
+                  onSelect={selectNode}
                   onAddChild={addNode}
                 />
               ))}
@@ -188,23 +268,23 @@ export function CourseBuilderPage() {
             {activeNode ? (
               <NodeEditor
                 node={activeNode}
+                title={title}
+                content={content}
+                onTitleChange={setTitle}
+                onContentChange={setContent}
                 isSaving={updateNode.isPending}
-                onSave={(input) =>
-                  updateNode.mutate(
-                    { id: activeNode.id, input },
-                    {
-                      onSuccess: () => toast.success("Node saved"),
-                      onError: (error) => toast.error(error.message),
-                    },
-                  )
-                }
+                onSave={saveActiveNode}
                 onDelete={() => setNodeToDelete(activeNode)}
               />
             ) : (
               <div className="flex h-full min-h-56 flex-col items-center justify-center gap-3 p-6 text-center">
                 <FilePlus2 className="size-8 text-muted-foreground" />
+
                 <div>
-                  <h2 className="font-medium">Select a node to edit</h2>
+                  <h2 className="font-medium">
+                    Select a node to edit
+                  </h2>
+
                   <p className="mt-1 text-sm text-muted-foreground">
                     Choose a node in the tree or create a new one.
                   </p>
@@ -216,49 +296,80 @@ export function CourseBuilderPage() {
           <aside className="space-y-5 p-4 text-sm">
             <div>
               <h2 className="mb-2 font-medium">Properties</h2>
+
               <p className="text-muted-foreground">
-                Created {new Date(course.data.createdAt).toLocaleDateString()}
+                Created{" "}
+                {new Date(
+                  course.data.createdAt,
+                ).toLocaleDateString()}
               </p>
             </div>
+
             <CourseTagsEditor
               courseId={courseId}
               tags={course.data.tags}
               availableTags={tags}
               isLoading={isTagsLoading}
             />
+
             <PropertyList
               title="Skills"
-              values={course.data.skills.map((skill) => skill.name)}
+              values={course.data.skills.map(
+                (skill) => skill.name,
+              )}
             />
+
             <div>
-              <h3 className="mb-2 font-medium">Last updated</h3>
+              <h3 className="mb-2 font-medium">
+                Last updated
+              </h3>
+
               <p className="text-muted-foreground">
-                {new Date(course.data.updatedAt).toLocaleString()}
+                {new Date(
+                  course.data.updatedAt,
+                ).toLocaleString()}
               </p>
             </div>
           </aside>
         </div>
       </div>
 
+      {/* Delete confirmation */}
       <AlertDialog
         open={nodeToDelete !== null}
-        onOpenChange={(open) => !open && setNodeToDelete(null)}
+        onOpenChange={(open) => {
+          if (!open && !deleteNode.isPending) {
+            setNodeToDelete(null);
+          }
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete “{nodeToDelete?.title}”?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Delete “{nodeToDelete?.title}”?
+            </AlertDialogTitle>
+
             <AlertDialogDescription>
-              Its children will remain in the course and become root nodes.
+              Its children will remain in the course and become
+              root nodes.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteNode.isPending}>
+              Cancel
+            </AlertDialogCancel>
+
             <AlertDialogAction
               variant="destructive"
               onClick={confirmDelete}
               disabled={deleteNode.isPending}
             >
-              Delete
+              {deleteNode.isPending ? (
+                <LoaderCircle className="animate-spin" />
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -275,7 +386,7 @@ function TreeNode({
 }: {
   node: CourseNode;
   activeId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (node: CourseNode) => void;
   onAddChild: (node: CourseNode) => void;
 }) {
   return (
@@ -287,11 +398,13 @@ function TreeNode({
             "h-8 min-w-0 flex-1 justify-start px-2 text-left",
             activeId === node.id && "bg-accent",
           )}
-          onClick={() => onSelect(node.id)}
+          onClick={() => onSelect(node)}
         >
           <ChevronRight className="size-3.5 shrink-0" />
+
           <span className="truncate">{node.title}</span>
         </Button>
+
         <Button
           size="icon"
           variant="ghost"
@@ -302,6 +415,7 @@ function TreeNode({
           <Plus className="size-3.5" />
         </Button>
       </div>
+
       {node.children.length > 0 && (
         <div className="ml-4 border-l pl-1">
           {node.children.map((child) => (
@@ -321,37 +435,65 @@ function TreeNode({
 
 function NodeEditor({
   node,
+  title,
+  content,
+  onTitleChange,
+  onContentChange,
   isSaving,
   onSave,
   onDelete,
 }: {
   node: CourseNode;
+  title: string;
+  content: string;
+  onTitleChange: (value: string) => void;
+  onContentChange: (value: string) => void;
   isSaving: boolean;
-  onSave: (input: { title: string; content: string }) => void;
+  onSave: (input: {
+    title: string;
+    content: string;
+  }) => void;
   onDelete: () => void;
 }) {
-  const [title, setTitle] = useState(node.title);
-  const [content, setContent] = useState(node.content);
-  useEffect(() => {
-    setTitle(node.title);
-    setContent(node.content);
-  }, [node.id, node.title, node.content]);
-  const changed = title !== node.title || content !== node.content;
+  const changed =
+    title !== node.title || content !== node.content;
+
+  function handleSave() {
+    const normalizedTitle = title.trim();
+
+    onTitleChange(normalizedTitle);
+
+    onSave({
+      title: normalizedTitle,
+      content,
+    });
+  }
+
   return (
     <div className="flex h-full min-h-[420px] flex-col p-4">
       <div className="mb-4 flex items-center gap-2">
         <Input
           value={title}
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) =>
+            onTitleChange(event.target.value)
+          }
           aria-label="Node title"
         />
+
         <Button
           size="sm"
-          onClick={() => onSave({ title: title.trim(), content })}
+          onClick={handleSave}
           disabled={!title.trim() || !changed || isSaving}
         >
-          {isSaving ? <LoaderCircle className="animate-spin" /> : <Save />} Save
+          {isSaving ? (
+            <LoaderCircle className="animate-spin" />
+          ) : (
+            <Save />
+          )}
+
+          Save
         </Button>
+
         <Button
           size="icon"
           variant="ghost"
@@ -362,10 +504,13 @@ function NodeEditor({
           <Trash2 />
         </Button>
       </div>
+
       <Textarea
         className="min-h-80 flex-1 font-mono"
         value={content}
-        onChange={(event) => setContent(event.target.value)}
+        onChange={(event) =>
+          onContentChange(event.target.value)
+        }
         placeholder="Write Markdown content…"
         aria-label="Node Markdown content"
       />
@@ -373,14 +518,24 @@ function NodeEditor({
   );
 }
 
-function PropertyList({ title, values }: { title: string; values: string[] }) {
+function PropertyList({
+  title,
+  values,
+}: {
+  title: string;
+  values: string[];
+}) {
   return (
     <div>
       <h3 className="mb-2 font-medium">{title}</h3>
-      {values.length ? (
+
+      {values.length > 0 ? (
         <div className="flex flex-wrap gap-1">
           {values.map((value) => (
-            <span key={value} className="rounded bg-muted px-2 py-1 text-xs">
+            <span
+              key={value}
+              className="rounded bg-muted px-2 py-1 text-xs"
+            >
               {value}
             </span>
           ))}
@@ -391,6 +546,7 @@ function PropertyList({ title, values }: { title: string; values: string[] }) {
     </div>
   );
 }
+
 function BuilderMessage({
   title,
   description,
@@ -404,12 +560,19 @@ function BuilderMessage({
     <main className="flex flex-1 items-center justify-center p-6">
       <div className="space-y-3 text-center">
         <h1 className="font-medium">{title}</h1>
-        <p className="text-sm text-muted-foreground">{description}</p>
-        {retry && <Button onClick={retry}>Try again</Button>}
+
+        <p className="text-sm text-muted-foreground">
+          {description}
+        </p>
+
+        {retry && (
+          <Button onClick={retry}>Try again</Button>
+        )}
       </div>
     </main>
   );
 }
+
 function BuilderSkeleton() {
   return (
     <main className="flex-1 p-6">
@@ -420,6 +583,7 @@ function BuilderSkeleton() {
     </main>
   );
 }
+
 function TreeSkeleton() {
   return (
     <div className="space-y-2 p-2">
