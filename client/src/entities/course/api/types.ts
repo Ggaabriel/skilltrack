@@ -1,7 +1,4 @@
-export type CourseType =
-  | "QUICK_NOTE"
-  | "STEP_BY_STEP"
-  | "FREE_FORM";
+export type CourseType = "QUICK_NOTE" | "STEP_BY_STEP" | "FREE_FORM";
 
 export type CourseTag = {
   id: number;
@@ -24,3 +21,11 @@ export type Course = {
   createdAt: string;
   updatedAt: string;
 };
+
+export function normalizeCourseRelations(course: Course): Course {
+  return {
+    ...course,
+    tags: course.tags.map((tag) => ({ ...tag, id: Number(tag.id) })),
+    skills: course.skills.map((skill) => ({ ...skill, id: Number(skill.id) })),
+  };
+}

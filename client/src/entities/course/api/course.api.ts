@@ -1,6 +1,6 @@
 import { graphqlClient } from "@/shared/api";
 
-import type { Course } from "./types";
+import { normalizeCourseRelations, type Course } from "./types";
 
 type CoursesQueryResponse = {
   courses: {
@@ -77,20 +77,17 @@ const COURSE_QUERY = `
 export const courseApi = {
   async getCourses(): Promise<Course[]> {
     const response =
-      await graphqlClient.request<CoursesQueryResponse>(
-        COURSES_QUERY,
-      );
+      await graphqlClient.request<CoursesQueryResponse>(COURSES_QUERY);
 
-    return response.courses.data;
+    return response.courses.data.map(normalizeCourseRelations);
   },
 
   async getCourse(id: string): Promise<Course> {
-    const response =
-      await graphqlClient.request<CourseQueryResponse>(
-        COURSE_QUERY,
-        { id },
-      );
+    const response = await graphqlClient.request<CourseQueryResponse>(
+      COURSE_QUERY,
+      { id },
+    );
 
-    return response.course.data;
+    return normalizeCourseRelations(response.course.data);
   },
 };

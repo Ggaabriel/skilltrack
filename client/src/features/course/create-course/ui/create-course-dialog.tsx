@@ -39,23 +39,6 @@ import {
 } from "../model/schemas";
 import { useCreateCourseMutation } from "../api/create-course.mutation";
 
-import { Check, ChevronsUpDown } from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
 import { useTagsQuery } from "@/entities/tag/api/tag.queries";
 import { useSkillsQuery } from "@/entities/skill/api/skill.queries";
 

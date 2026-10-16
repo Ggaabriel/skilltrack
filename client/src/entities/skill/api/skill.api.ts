@@ -54,15 +54,18 @@ export const skillApi = {
     const response =
       await graphqlClient.request<SkillsQueryResponse>(SKILLS_QUERY);
 
-    return response.skills.data;
+    return response.skills.data.map(toSkill);
   },
   async createSkill(name: string): Promise<Skill> {
-  const response =
-    await graphqlClient.request<CreateSkillResponse>(
+    const response = await graphqlClient.request<CreateSkillResponse>(
       CREATE_SKILL_MUTATION,
       { input: { name } },
     );
 
-  return response.createSkill.data;
-},
+    return toSkill(response.createSkill.data);
+  },
 };
+
+function toSkill(skill: Skill): Skill {
+  return { ...skill, id: Number(skill.id) };
+}

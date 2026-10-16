@@ -3,6 +3,7 @@ export const Routes = {
   CALENDAR: "/calendar",
   SETTINGS: "/settings",
   COURSES: "/courses",
+  COURSE_BUILDER: "/courses/:courseId/builder",
 } as const;
 
 export type Page = (typeof Routes)[keyof typeof Routes];

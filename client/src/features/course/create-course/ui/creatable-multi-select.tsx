@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -184,6 +184,15 @@ export function CreatableMultiSelect({
           {selectedItems.map((item) => (
             <Badge key={item.id} variant="secondary">
               {item.name}
+              <button
+                type="button"
+                className="ml-1 rounded-sm outline-none hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/50"
+                onClick={() => toggleItem(item)}
+                disabled={disabled}
+                aria-label={`Remove ${item.name}`}
+              >
+                <X className="size-3" />
+              </button>
             </Badge>
           ))}
         </div>

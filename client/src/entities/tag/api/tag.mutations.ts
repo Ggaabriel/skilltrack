@@ -25,3 +25,20 @@ export function useCreateTagMutation() {
     },
   });
 }
+
+export function useUpdateTagMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string }) =>
+      tagApi.updateTag(id, name),
+
+    onSuccess: (updatedTag) => {
+      queryClient.setQueryData<Tag[]>(tagQueryKeys.list(), (current = []) =>
+        current
+          .map((tag) => (tag.id === updatedTag.id ? updatedTag : tag))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
+    },
+  });
+}

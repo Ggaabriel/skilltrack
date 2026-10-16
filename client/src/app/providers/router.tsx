@@ -5,6 +5,7 @@ import { AuthDialog } from "@/features/auth";
 import { CalendarSkeleton } from "@/features/calendar/ui/skeletons/calendar-skeleton";
 import { CalendarPage } from "@/pages/calendar/ui/calendar-page";
 import { CoursesPage } from "@/pages/courses";
+import { CourseBuilderPage } from "@/pages/course-builder";
 import { SettingsPage } from "@/pages/settings";
 import { RequireAuth } from "@/shared/auth/RequireAuth";
 import { Routes } from "@/shared/routing/routes";
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
           {
             path: Routes.COURSES,
             element: <CoursesPage />,
+          },
+          {
+            path: Routes.COURSE_BUILDER,
+            element: <CourseBuilderPage />,
           },
           {
             path: Routes.SETTINGS,
