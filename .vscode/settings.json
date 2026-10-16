@@ -1,5 +1,5 @@
 {
-  "chat.disableAIFeatures": false,
+  "chat.disableAIFeatures": true,
   "chat.tools.terminal.autoApprove": {
     "/^npm run build$/": {
       "approve": true,

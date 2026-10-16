@@ -39,6 +39,37 @@ import {
 } from "../model/schemas";
 import { useCreateCourseMutation } from "../api/create-course.mutation";
 
+import { Check, ChevronsUpDown } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+import { useTagsQuery } from "@/entities/tag/api/tag.queries";
+import { useSkillsQuery } from "@/entities/skill/api/skill.queries";
+
+import {
+  useUpdateCourseSkillsMutation,
+  useUpdateCourseTagsMutation,
+} from "@/entities/course/api/course.mutations";
+
+import { useCreateTagMutation } from "@/entities/tag/api/tag.mutations";
+
+import { useCreateSkillMutation } from "@/entities/skill/api/skill.mutations";
+
+import { CreatableMultiSelect } from "./creatable-multi-select";
+
 export function CreateCourseDialog() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -55,13 +86,35 @@ export function CreateCourseDialog() {
   });
 
   async function onSubmit(values: CreateCourseFormValues) {
-    const course = await createCourseMutation.mutateAsync(values);
+    try {
+      const course = await createCourseMutation.mutateAsync(values);
 
-    form.reset();
-    createCourseMutation.reset();
-    setOpen(false);
+      await Promise.all([
+        updateCourseTagsMutation.mutateAsync({
+          id: course.id,
+          tagIds: selectedTagIds,
+        }),
 
-    navigate(`${Routes.COURSES}/${course.id}/builder`);
+        updateCourseSkillsMutation.mutateAsync({
+          id: course.id,
+          skillIds: selectedSkillIds,
+        }),
+      ]);
+
+      form.reset();
+      setSelectedTagIds([]);
+      setSelectedSkillIds([]);
+
+      createCourseMutation.reset();
+      updateCourseTagsMutation.reset();
+      updateCourseSkillsMutation.reset();
+
+      setOpen(false);
+
+      navigate(`${Routes.COURSES}/${course.id}/builder`);
+    } catch {
+      // Ошибка отображается ниже формы
+    }
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -77,6 +130,23 @@ export function CreateCourseDialog() {
     }
   }
 
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+  const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([]);
+
+  const { data: tags = [], isLoading: isTagsLoading } = useTagsQuery();
+
+  const { data: skills = [], isLoading: isSkillsLoading } = useSkillsQuery();
+
+  const updateCourseTagsMutation = useUpdateCourseTagsMutation();
+  const updateCourseSkillsMutation = useUpdateCourseSkillsMutation();
+
+  const isSubmitting =
+    createCourseMutation.isPending ||
+    updateCourseTagsMutation.isPending ||
+    updateCourseSkillsMutation.isPending;
+
+  const createTagMutation = useCreateTagMutation();
+  const createSkillMutation = useCreateSkillMutation();
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
@@ -96,10 +166,7 @@ export function CreateCourseDialog() {
         </DialogHeader>
 
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-5"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField
               control={form.control}
               name="title"
@@ -161,17 +228,11 @@ export function CreateCourseDialog() {
                     </FormControl>
 
                     <SelectContent>
-                      <SelectItem value="QUICK_NOTE">
-                        Quick note
-                      </SelectItem>
+                      <SelectItem value="QUICK_NOTE">Quick note</SelectItem>
 
-                      <SelectItem value="STEP_BY_STEP">
-                        Step by step
-                      </SelectItem>
+                      <SelectItem value="STEP_BY_STEP">Step by step</SelectItem>
 
-                      <SelectItem value="FREE_FORM">
-                        Free form
-                      </SelectItem>
+                      <SelectItem value="FREE_FORM">Free form</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -180,11 +241,44 @@ export function CreateCourseDialog() {
               )}
             />
 
-            {createCourseMutation.isError && (
+            <CreatableMultiSelect
+              label="Tags"
+              placeholder="Select or create tags"
+              searchPlaceholder="Search or enter a tag..."
+              createLabel="Create tag"
+              items={tags}
+              selectedIds={selectedTagIds}
+              onSelectedIdsChange={setSelectedTagIds}
+              onCreate={(name) => createTagMutation.mutateAsync(name)}
+              isLoading={isTagsLoading}
+              isCreating={createTagMutation.isPending}
+              disabled={createCourseMutation.isPending}
+            />
+
+            <CreatableMultiSelect
+              label="Skills"
+              placeholder="Select or create skills"
+              searchPlaceholder="Search or enter a skill..."
+              createLabel="Create skill"
+              items={skills}
+              selectedIds={selectedSkillIds}
+              onSelectedIdsChange={setSelectedSkillIds}
+              onCreate={(name) => createSkillMutation.mutateAsync(name)}
+              isLoading={isSkillsLoading}
+              isCreating={createSkillMutation.isPending}
+              disabled={createCourseMutation.isPending}
+            />
+
+            {createCourseMutation.isError ||
+            updateCourseTagsMutation.isError ||
+            updateCourseSkillsMutation.isError ? (
               <p className="text-sm text-destructive">
-                {createCourseMutation.error.message}
+                {createCourseMutation.error?.message ??
+                  updateCourseTagsMutation.error?.message ??
+                  updateCourseSkillsMutation.error?.message ??
+                  "Failed to create course."}
               </p>
-            )}
+            ) : null}
 
             <div className="flex justify-end gap-2">
               <Button
@@ -196,13 +290,8 @@ export function CreateCourseDialog() {
                 Cancel
               </Button>
 
-              <Button
-                type="submit"
-                disabled={createCourseMutation.isPending}
-              >
-                {createCourseMutation.isPending
-                  ? "Creating..."
-                  : "Create course"}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create course"}
               </Button>
             </div>
           </form>
