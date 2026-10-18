@@ -32,6 +32,20 @@ type DeleteCourseResponse = {
   };
 };
 
+type UpdateCourseInput = {
+  title: string;
+  description: string;
+};
+
+type UpdateCourseResponse = {
+  updateCourse: {
+    ok: boolean;
+    status: number;
+    message: string;
+    data: Course;
+  };
+};
+
 const UPDATE_COURSE_TAGS_MUTATION = `
   mutation UpdateCourseTags(
     $id: ID!
@@ -105,6 +119,39 @@ const DELETE_COURSE_MUTATION = `
       status
       message
       data
+    }
+  }
+`;
+
+const UPDATE_COURSE_MUTATION = `
+  mutation UpdateCourse(
+    $id: ID!
+    $input: UpdateCourseInput!
+  ) {
+    updateCourse(
+      id: $id
+      input: $input
+    ) {
+      ok
+      status
+      message
+      data {
+        id
+        title
+        description
+        type
+        cover
+        createdAt
+        updatedAt
+        tags {
+          id
+          name
+        }
+        skills {
+          id
+          name
+        }
+      }
     }
   }
 `;
@@ -208,3 +255,38 @@ export function useDeleteCourseMutation() {
     },
   });
 }
+
+async function updateCourse(
+  id: string,
+  input: UpdateCourseInput,
+): Promise<Course> {
+  const response = await graphqlClient.request<UpdateCourseResponse>(
+    UPDATE_COURSE_MUTATION,
+    { id, input },
+  );
+
+  const result = response.updateCourse;
+
+  if (!result.ok) {
+    throw new Error(result.message || "Failed to update course.");
+  }
+
+  return normalizeCourseRelations(result.data);
+}
+export function useUpdateCourseMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateCourseInput }) =>
+      updateCourse(id, input),
+
+    onSuccess: (course) => {
+      queryClient.setQueryData(courseQueryKeys.detail(course.id), course);
+
+      queryClient.invalidateQueries({
+        queryKey: courseQueryKeys.list(),
+      });
+    },
+  });
+}
+
