@@ -77,19 +77,16 @@ export function CourseHeader({
         )}
 
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span>
-            Created {formatDate(createdAt).toLocaleDateString()}
-          </span>
+          <span>Created {formatDate(createdAt).toLocaleDateString()}</span>
 
-          <span>
-            Updated {formatDate(updatedAt).toLocaleString()}
-          </span>
+          <span>Updated {formatDate(updatedAt).toLocaleString()}</span>
         </div>
       </div>
 
       <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="min-w-0">
           <CourseTagsEditor
+            layout="horizontal"
             key={`${courseId}:${tagKey}`}
             courseId={courseId}
             tags={courseTags}
@@ -100,6 +97,7 @@ export function CourseHeader({
 
         <div className="min-w-0">
           <CourseSkillsEditor
+            layout="horizontal"
             key={`${courseId}:${skillKey}`}
             courseId={courseId}
             skills={courseSkills}

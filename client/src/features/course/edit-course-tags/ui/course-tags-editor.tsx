@@ -8,12 +8,14 @@ import type { CourseTag } from "@/entities/course/api/types";
 import type { Tag } from "@/entities/tag/api/tag.api";
 import { useCreateTagMutation } from "@/entities/tag/api/tag.mutations";
 import { CreatableMultiSelect } from "../../create-course";
+import type { CreatableMultiSelectLayout } from "../../create-course/ui/creatable-multi-select";
 
 type CourseTagsEditorProps = {
   courseId: string;
   tags: CourseTag[];
   availableTags: Tag[];
   isLoading?: boolean;
+  layout?: CreatableMultiSelectLayout;
 };
 
 export function CourseTagsEditor({
@@ -21,6 +23,7 @@ export function CourseTagsEditor({
   tags,
   availableTags,
   isLoading = false,
+  layout = "vertical",
 }: CourseTagsEditorProps) {
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>(() =>
     tags.map((tag) => tag.id),
@@ -66,6 +69,7 @@ export function CourseTagsEditor({
         isLoading={isLoading}
         isCreating={createTag.isPending}
         disabled={isSaving}
+        layout={layout}
       />
       <div className="mb-2 flex items-center justify-between gap-2">
         {hasChanges && (

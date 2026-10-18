@@ -7,12 +7,14 @@ import { useUpdateCourseSkillsMutation } from "@/entities/course/api/course.muta
 import type { Skill } from "@/entities/skill/api/skill.api";
 import { useCreateSkillMutation } from "@/entities/skill/api/skill.mutations";
 import { CreatableMultiSelect } from "@/features/course/create-course";
+import type { CreatableMultiSelectLayout } from "../../create-course/ui/creatable-multi-select";
 
 type CourseSkillsEditorProps = {
   courseId: string;
   skills: Pick<Skill, "id" | "name">[];
   availableSkills: Skill[];
   isLoading?: boolean;
+  layout?: CreatableMultiSelectLayout;
 };
 
 export function CourseSkillsEditor({
@@ -20,6 +22,7 @@ export function CourseSkillsEditor({
   skills,
   availableSkills,
   isLoading = false,
+  layout = "vertical",
 }: CourseSkillsEditorProps) {
   const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>(() =>
     skills.map((skill) => skill.id),
@@ -66,6 +69,7 @@ export function CourseSkillsEditor({
         isLoading={isLoading}
         isCreating={createSkill.isPending}
         disabled={isSaving}
+        layout={layout}
       />
       <div className="mb-2 flex items-center justify-between gap-2">
         {hasChanges && (

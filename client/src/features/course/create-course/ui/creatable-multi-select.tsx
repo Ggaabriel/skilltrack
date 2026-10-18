@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
 
@@ -15,11 +16,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export type SelectableItem = {
   id: number;
   name: string;
 };
+
+export type CreatableMultiSelectLayout = "vertical" | "horizontal";
 
 type CreatableMultiSelectProps = {
   label: string;
@@ -30,6 +34,7 @@ type CreatableMultiSelectProps = {
   selectedIds: number[];
   onSelectedIdsChange: (ids: number[]) => void;
   onCreate: (name: string) => Promise<SelectableItem>;
+  layout?: CreatableMultiSelectLayout;
   isLoading?: boolean;
   isCreating?: boolean;
   disabled?: boolean;
@@ -44,6 +49,7 @@ export function CreatableMultiSelect({
   selectedIds,
   onSelectedIdsChange,
   onCreate,
+  layout = "vertical",
   isLoading = false,
   isCreating = false,
   disabled = false,
@@ -52,19 +58,23 @@ export function CreatableMultiSelect({
   const [search, setSearch] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
 
+  const isHorizontal = layout === "horizontal";
   const normalizedSearch = search.trim();
+  const normalizedSearchLower = normalizedSearch.toLowerCase();
 
   const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(normalizedSearch.toLowerCase()),
+    item.name.toLowerCase().includes(normalizedSearchLower),
   );
 
   const exactMatch = items.some(
-    (item) => item.name.toLowerCase() === normalizedSearch.toLowerCase(),
+    (item) => item.name.toLowerCase() === normalizedSearchLower,
   );
 
   const canCreate = normalizedSearch.length > 0 && !exactMatch;
 
-  const selectedItems = items.filter((item) => selectedIds.includes(item.id));
+  const selectedItems = items.filter((item) =>
+    selectedIds.includes(item.id),
+  );
 
   function toggleItem(item: SelectableItem) {
     const isSelected = selectedIds.includes(item.id);
@@ -77,16 +87,19 @@ export function CreatableMultiSelect({
   }
 
   async function handleCreate() {
-    if (!canCreate || isCreating || disabled) {
-      return;
-    }
+    if (!canCreate || isCreating || disabled) return;
 
     setCreateError(null);
 
     try {
       const createdItem = await onCreate(normalizedSearch);
 
-      onSelectedIdsChange([...selectedIds, createdItem.id]);
+      onSelectedIdsChange(
+        selectedIds.includes(createdItem.id)
+          ? selectedIds
+          : [...selectedIds, createdItem.id],
+      );
+
       setSearch("");
     } catch (error) {
       setCreateError(
@@ -98,8 +111,21 @@ export function CreatableMultiSelect({
   }
 
   return (
-    <div className="space-y-2">
-      <div className="text-sm font-medium">{label}</div>
+    <div
+      className={cn(
+        isHorizontal
+          ? "flex min-w-0 flex-wrap items-center gap-2"
+          : "space-y-2",
+      )}
+    >
+      <div
+        className={cn(
+          "text-sm font-medium",
+          isHorizontal && "shrink-0",
+        )}
+      >
+        {label}
+      </div>
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -108,20 +134,35 @@ export function CreatableMultiSelect({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between font-normal"
+            className={cn(
+              "justify-between font-normal",
+              isHorizontal
+                ? "h-8 w-auto min-w-[132px] max-w-full gap-2 px-2"
+                : "w-full",
+            )}
             disabled={disabled || isLoading}
           >
-            {selectedItems.length > 0
-              ? `Selected: ${selectedItems.length}`
-              : isLoading
-                ? "Loading..."
-                : placeholder}
+            <span className="truncate">
+              {selectedItems.length > 0
+                ? `Selected: ${selectedItems.length}`
+                : isLoading
+                  ? "Loading..."
+                  : placeholder}
+            </span>
 
-            <ChevronsUpDown className="size-4 opacity-50" />
+            <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
 
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+        <PopoverContent
+          align="start"
+          className={cn(
+            "p-0",
+            isHorizontal
+              ? "w-64"
+              : "w-[var(--radix-popover-trigger-width)]",
+          )}
+        >
           <Command shouldFilter={false}>
             <CommandInput
               placeholder={searchPlaceholder}
@@ -150,9 +191,10 @@ export function CreatableMultiSelect({
                       onSelect={() => toggleItem(item)}
                     >
                       <Check
-                        className={`mr-2 size-4 ${
-                          selected ? "opacity-100" : "opacity-0"
-                        }`}
+                        className={cn(
+                          "mr-2 size-4",
+                          selected ? "opacity-100" : "opacity-0",
+                        )}
                       />
 
                       {item.name}
@@ -180,10 +222,20 @@ export function CreatableMultiSelect({
       </Popover>
 
       {selectedItems.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div
+          className={cn(
+            "flex flex-wrap gap-2",
+            isHorizontal && "min-w-0 items-center gap-1.5",
+          )}
+        >
           {selectedItems.map((item) => (
-            <Badge key={item.id} variant="secondary">
+            <Badge
+              key={item.id}
+              variant="secondary"
+              className={cn(isHorizontal && "gap-1")}
+            >
               {item.name}
+
               <button
                 type="button"
                 className="ml-1 rounded-sm outline-none hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/50"
@@ -198,7 +250,16 @@ export function CreatableMultiSelect({
         </div>
       )}
 
-      {createError && <p className="text-sm text-destructive">{createError}</p>}
+      {createError && (
+        <p
+          className={cn(
+            "text-sm text-destructive",
+            isHorizontal && "basis-full",
+          )}
+        >
+          {createError}
+        </p>
+      )}
     </div>
   );
 }
