@@ -6,6 +6,10 @@ import { CalendarSkeleton } from "@/features/calendar/ui/skeletons/calendar-skel
 import { CalendarPage } from "@/pages/calendar/ui/calendar-page";
 import { CoursesPage } from "@/pages/courses";
 import { CourseBuilderPage } from "@/pages/course-builder";
+import { CourseReaderPage } from "@/pages/course-reader/ui/course-reader-page";
+import { HomePage } from "@/pages/home/ui/home-page";
+import { ProfilePage } from "@/pages/profile/ui/profile-page";
+import { UserProfilePage } from "@/pages/user-profile/ui/user-profile-page";
 import { SettingsPage } from "@/pages/settings";
 import { RequireAuth } from "@/shared/auth/RequireAuth";
 import { Routes } from "@/shared/routing/routes";
@@ -30,7 +34,11 @@ const router = createBrowserRouter([
     children: [
       {
         path: Routes.BASE,
-        element: <div>Base</div>,
+        element: <HomePage />,
+      },
+      {
+        path: Routes.USER_PROFILE,
+        element: <UserProfilePage />,
       },
       {
         element: <RequireAuth fallback={<CalendarSkeleton />} />,
@@ -53,8 +61,16 @@ const router = createBrowserRouter([
             element: <CourseBuilderPage />,
           },
           {
+            path: Routes.COURSE_READER,
+            element: <CourseReaderPage />,
+          },
+          {
             path: Routes.SETTINGS,
             element: <SettingsPage />,
+          },
+          {
+            path: Routes.PROFILE,
+            element: <ProfilePage />,
           },
         ],
       },

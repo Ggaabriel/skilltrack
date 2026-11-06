@@ -1,0 +1,1 @@
+export { CourseSkillsEditor } from "./ui/course-skill-editor";

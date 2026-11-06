@@ -59,7 +59,7 @@ export function CourseTagsEditor({
     <section>
       <CreatableMultiSelect
         label="Tags"
-        placeholder="Select or create tags"
+        placeholder="Selected: 0"
         searchPlaceholder="Search or enter a tag..."
         createLabel="Create tag"
         items={availableTags}

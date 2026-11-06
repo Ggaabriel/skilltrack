@@ -226,7 +226,7 @@ export function CreateCourseDialog() {
 
             <CreatableMultiSelect
               label="Tags"
-              placeholder="Select or create tags"
+              placeholder="Selected: 0"
               searchPlaceholder="Search or enter a tag..."
               createLabel="Create tag"
               items={tags}
@@ -240,7 +240,7 @@ export function CreateCourseDialog() {
 
             <CreatableMultiSelect
               label="Skills"
-              placeholder="Select or create skills"
+              placeholder="Selected: 0"
               searchPlaceholder="Search or enter a skill..."
               createLabel="Create skill"
               items={skills}

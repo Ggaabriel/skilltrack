@@ -1,6 +1,11 @@
 import { graphqlClient } from "@/shared/api";
 
-import type { CourseNode, CreateNodeInput, UpdateNodeInput } from "./types";
+import type {
+  CourseNode,
+  CreateNodeInput,
+  MoveNodeInput,
+  UpdateNodeInput,
+} from "./types";
 
 type NodesResponse = {
   nodes: { data: CourseNode[] };
@@ -9,6 +14,7 @@ type NodesResponse = {
 type NodeResponse = {
   createNode?: { data: CourseNode };
   updateNode?: { data: CourseNode };
+  moveNode?: { data: CourseNode };
   deleteNode?: { data: boolean };
 };
 
@@ -53,6 +59,12 @@ const UPDATE_NODE_MUTATION = `
   }
 `;
 
+const MOVE_NODE_MUTATION = `
+  mutation MoveNode($id: ID!, $input: MoveNodeInput!) {
+    moveNode(id: $id, input: $input) { data { ${NODE_FIELDS} } }
+  }
+`;
+
 const DELETE_NODE_MUTATION = `
   mutation DeleteNode($id: ID!) {
     deleteNode(id: $id) { data }
@@ -81,6 +93,14 @@ export const nodeApi = {
       { id, input },
     );
     return response.updateNode!.data;
+  },
+
+  async moveNode(id: string, input: MoveNodeInput): Promise<CourseNode> {
+    const response = await graphqlClient.request<NodeResponse>(
+      MOVE_NODE_MUTATION,
+      { id, input },
+    );
+    return response.moveNode!.data;
   },
 
   async deleteNode(id: string): Promise<void> {

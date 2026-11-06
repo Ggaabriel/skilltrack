@@ -84,6 +84,8 @@ model Course {
   description String?
   type        String
   cover       String?
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
 
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int

@@ -46,6 +46,15 @@ type UpdateCourseResponse = {
   };
 };
 
+type PublishCourseResponse = {
+  publishCourse: {
+    ok: boolean;
+    status: number;
+    message: string;
+    data: Course;
+  };
+};
+
 const UPDATE_COURSE_TAGS_MUTATION = `
   mutation UpdateCourseTags(
     $id: ID!
@@ -64,6 +73,8 @@ const UPDATE_COURSE_TAGS_MUTATION = `
         description
         type
         cover
+        isPublished
+        publishedAt
         createdAt
         updatedAt
         tags {
@@ -97,6 +108,8 @@ const UPDATE_COURSE_SKILLS_MUTATION = `
         description
         type
         cover
+        isPublished
+        publishedAt
         createdAt
         updatedAt
         tags {
@@ -141,6 +154,8 @@ const UPDATE_COURSE_MUTATION = `
         description
         type
         cover
+        isPublished
+        publishedAt
         createdAt
         updatedAt
         tags {
@@ -151,6 +166,29 @@ const UPDATE_COURSE_MUTATION = `
           id
           name
         }
+      }
+    }
+  }
+`;
+
+const PUBLISH_COURSE_MUTATION = `
+  mutation PublishCourse($id: ID!) {
+    publishCourse(id: $id) {
+      ok
+      status
+      message
+      data {
+        id
+        title
+        description
+        type
+        cover
+        isPublished
+        publishedAt
+        createdAt
+        updatedAt
+        tags { id name }
+        skills { id name }
       }
     }
   }
@@ -193,6 +231,23 @@ function toIntegerIds(ids: number[]): number[] {
   return [...new Set(normalizedIds)];
 }
 
+function refreshCourseQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  course: Course,
+) {
+  queryClient.setQueryData(courseQueryKeys.detail(course.id), course);
+
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: courseQueryKeys.list() }),
+    queryClient.invalidateQueries({
+      queryKey: courseQueryKeys.publishedList(),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: courseQueryKeys.publishedDetail(course.id),
+    }),
+  ]);
+}
+
 async function deleteCourse(id: string): Promise<string> {
   const response = await graphqlClient.request<DeleteCourseResponse>(
     DELETE_COURSE_MUTATION,
@@ -215,13 +270,7 @@ export function useUpdateCourseTagsMutation() {
     mutationFn: ({ id, tagIds }: { id: string; tagIds: number[] }) =>
       updateCourseTags(id, tagIds),
 
-    onSuccess: (course) => {
-      queryClient.setQueryData(courseQueryKeys.detail(course.id), course);
-
-      queryClient.invalidateQueries({
-        queryKey: courseQueryKeys.list(),
-      });
-    },
+    onSuccess: (course) => refreshCourseQueries(queryClient, course),
   });
 }
 
@@ -232,13 +281,7 @@ export function useUpdateCourseSkillsMutation() {
     mutationFn: ({ id, skillIds }: { id: string; skillIds: number[] }) =>
       updateCourseSkills(id, skillIds),
 
-    onSuccess: (course) => {
-      queryClient.setQueryData(courseQueryKeys.detail(course.id), course);
-
-      queryClient.invalidateQueries({
-        queryKey: courseQueryKeys.list(),
-      });
-    },
+    onSuccess: (course) => refreshCourseQueries(queryClient, course),
   });
 }
 
@@ -252,6 +295,9 @@ export function useDeleteCourseMutation() {
       queryClient.setQueryData<Course[]>(courseQueryKeys.list(), (courses) =>
         courses?.filter((course) => course.id !== id),
       );
+      queryClient.invalidateQueries({
+        queryKey: courseQueryKeys.publishedList(),
+      });
     },
   });
 }
@@ -280,13 +326,26 @@ export function useUpdateCourseMutation() {
     mutationFn: ({ id, input }: { id: string; input: UpdateCourseInput }) =>
       updateCourse(id, input),
 
-    onSuccess: (course) => {
-      queryClient.setQueryData(courseQueryKeys.detail(course.id), course);
-
-      queryClient.invalidateQueries({
-        queryKey: courseQueryKeys.list(),
-      });
-    },
+    onSuccess: (course) => refreshCourseQueries(queryClient, course),
   });
 }
 
+export function usePublishCourseMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await graphqlClient.request<PublishCourseResponse>(
+        PUBLISH_COURSE_MUTATION,
+        { id },
+      );
+      if (!response.publishCourse.ok) {
+        throw new Error(
+          response.publishCourse.message || "Failed to publish course.",
+        );
+      }
+      return normalizeCourseRelations(response.publishCourse.data);
+    },
+    onSuccess: (course) => refreshCourseQueries(queryClient, course),
+  });
+}

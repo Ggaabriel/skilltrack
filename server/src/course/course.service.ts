@@ -8,8 +8,17 @@ const courseSelect = {
   description: true,
   type: true,
   cover: true,
+  isPublished: true,
+  publishedAt: true,
   createdAt: true,
   updatedAt: true,
+  user: {
+    select: {
+      id: true,
+      name: true,
+      picturePath: true,
+    },
+  },
 
   tags: {
     select: {
@@ -43,8 +52,11 @@ type CourseWithRelations = Prisma.CourseGetPayload<{
 }>;
 
 function mapCourse(course: CourseWithRelations) {
+  const { user, ...courseData } = course;
+
   return {
-    ...course,
+    ...courseData,
+    author: user,
     tags: course.tags.map(({ tag }) => tag),
     skills: course.skills.map(({ skill }) => skill),
   };
@@ -64,6 +76,29 @@ export class CourseService {
     });
 
     return courses.map(mapCourse);
+  }
+
+  async findPublishedAll() {
+    const courses = await this.prisma.course.findMany({
+      where: { isPublished: true },
+      select: courseSelect,
+      orderBy: { publishedAt: 'desc' },
+    });
+
+    return courses.map(mapCourse);
+  }
+
+  async findPublishedOne(id: number) {
+    const course = await this.prisma.course.findFirst({
+      where: { id, isPublished: true },
+      select: courseSelect,
+    });
+
+    if (!course) {
+      throw new NotFoundException('Published course not found');
+    }
+
+    return mapCourse(course);
   }
 
   async findOne(id: number, userId: number) {
@@ -115,7 +150,7 @@ export class CourseService {
       cover?: string | null;
     },
   ) {
-    await this.findOne(id, userId);
+    await this.assertOwned(id, userId);
 
     const course = await this.prisma.course.update({
       where: { id },
@@ -126,8 +161,21 @@ export class CourseService {
     return mapCourse(course);
   }
 
+  async publish(id: number, userId: number) {
+    const course = await this.findOne(id, userId);
+    if (course.isPublished) return course;
+
+    const publishedCourse = await this.prisma.course.update({
+      where: { id },
+      data: { isPublished: true, publishedAt: new Date() },
+      select: courseSelect,
+    });
+
+    return mapCourse(publishedCourse);
+  }
+
   async updateTags(courseId: number, userId: number, tagIds: number[]) {
-    await this.findOne(courseId, userId);
+    await this.assertOwned(courseId, userId);
 
     const uniqueTagIds = [...new Set(tagIds)];
 
@@ -174,7 +222,7 @@ export class CourseService {
   }
 
   async updateSkills(courseId: number, userId: number, skillIds: number[]) {
-    await this.findOne(courseId, userId);
+    await this.assertOwned(courseId, userId);
 
     const uniqueSkillIds = [...new Set(skillIds)];
 
@@ -228,5 +276,9 @@ export class CourseService {
     });
 
     return true;
+  }
+
+  private assertOwned(id: number, userId: number) {
+    return this.findOne(id, userId);
   }
 }

@@ -13,8 +13,15 @@ describe('CourseService', () => {
     description: 'React course',
     type: 'STEP_BY_STEP',
     cover: null,
+    isPublished: false,
+    publishedAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+    user: {
+      id: 42,
+      name: 'Course author',
+      picturePath: null,
+    },
 
     tags: [],
     skills: [],
@@ -73,8 +80,17 @@ describe('CourseService', () => {
         description: true,
         type: true,
         cover: true,
+        isPublished: true,
+        publishedAt: true,
         createdAt: true,
         updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            picturePath: true,
+          },
+        },
 
         tags: {
           select: {
@@ -122,8 +138,17 @@ describe('CourseService', () => {
         description: true,
         type: true,
         cover: true,
+        isPublished: true,
+        publishedAt: true,
         createdAt: true,
         updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            picturePath: true,
+          },
+        },
 
         tags: {
           select: {
@@ -153,7 +178,8 @@ describe('CourseService', () => {
       },
     });
 
-    expect(result).toEqual(course);
+    const { user, ...courseData } = course;
+    expect(result).toEqual({ ...courseData, author: user });
   });
 
   it('scopes update operation by owner', async () => {
@@ -178,6 +204,42 @@ describe('CourseService', () => {
       },
       select: expect.any(Object) as object,
     });
+  });
+
+  it('publishes a course and records its publication time', async () => {
+    const publishedAt = new Date();
+    prisma.course.update.mockResolvedValue({
+      ...course,
+      isPublished: true,
+      publishedAt,
+    });
+
+    const publishedCourse = await service.publish(13, 42);
+
+    expect(prisma.course.update).toHaveBeenCalledTimes(1);
+    expect(publishedCourse).toMatchObject({ isPublished: true, publishedAt });
+  });
+
+  it('allows the owner to edit published course details', async () => {
+    prisma.course.findFirst.mockResolvedValue({
+      ...course,
+      isPublished: true,
+    });
+    prisma.course.update.mockResolvedValue({
+      ...course,
+      title: 'Updated title',
+      isPublished: true,
+    });
+
+    const updatedCourse = await service.update(13, 42, {
+      title: 'Updated title',
+    });
+
+    expect(updatedCourse).toMatchObject({
+      title: 'Updated title',
+      isPublished: true,
+    });
+    expect(prisma.course.update).toHaveBeenCalled();
   });
 
   it('scopes delete operation by owner', async () => {

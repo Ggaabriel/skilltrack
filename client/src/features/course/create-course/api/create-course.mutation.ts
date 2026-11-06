@@ -27,6 +27,8 @@ const CREATE_COURSE_MUTATION = `
         description
         type
         cover
+        isPublished
+        publishedAt
         createdAt
         updatedAt
       }

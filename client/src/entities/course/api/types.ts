@@ -10,12 +10,21 @@ export type CourseSkill = {
   name: string;
 };
 
+export type CourseAuthor = {
+  id: string;
+  name: string;
+  picturePath: string | null;
+};
+
 export type Course = {
   id: string;
   title: string;
   description: string | null;
   type: CourseType;
   cover: string | null;
+  isPublished: boolean;
+  publishedAt: string | null;
+  author?: CourseAuthor;
   tags: CourseTag[];
   skills: CourseSkill[];
   createdAt: string;

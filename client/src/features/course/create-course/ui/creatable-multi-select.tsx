@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
 
@@ -72,9 +71,7 @@ export function CreatableMultiSelect({
 
   const canCreate = normalizedSearch.length > 0 && !exactMatch;
 
-  const selectedItems = items.filter((item) =>
-    selectedIds.includes(item.id),
-  );
+  const selectedItems = items.filter((item) => selectedIds.includes(item.id));
 
   function toggleItem(item: SelectableItem) {
     const isSelected = selectedIds.includes(item.id);
@@ -111,116 +108,121 @@ export function CreatableMultiSelect({
   }
 
   return (
-    <div
-      className={cn(
-        isHorizontal
-          ? "flex min-w-0 flex-wrap items-center gap-2"
-          : "space-y-2",
-      )}
-    >
+    <>
       <div
         className={cn(
-          "text-sm font-medium",
-          isHorizontal && "shrink-0",
+          isHorizontal
+            ? "flex min-w-0 flex-wrap items-center gap-2"
+            : "space-y-2",
         )}
       >
-        {label}
-      </div>
+        <div className={cn("text-sm font-medium", isHorizontal && "shrink-0")}>
+          {label}
+        </div>
 
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className={cn(
-              "justify-between font-normal",
-              isHorizontal
-                ? "h-8 w-auto min-w-[132px] max-w-full gap-2 px-2"
-                : "w-full",
-            )}
-            disabled={disabled || isLoading}
-          >
-            <span className="truncate">
-              {selectedItems.length > 0
-                ? `Selected: ${selectedItems.length}`
-                : isLoading
-                  ? "Loading..."
-                  : placeholder}
-            </span>
-
-            <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-
-        <PopoverContent
-          align="start"
-          className={cn(
-            "p-0",
-            isHorizontal
-              ? "w-64"
-              : "w-[var(--radix-popover-trigger-width)]",
-          )}
-        >
-          <Command shouldFilter={false}>
-            <CommandInput
-              placeholder={searchPlaceholder}
-              value={search}
-              onValueChange={(value) => {
-                setSearch(value);
-                setCreateError(null);
-              }}
-            />
-
-            <CommandList>
-              {filteredItems.length === 0 && !canCreate && (
-                <div className="p-3 text-sm text-muted-foreground">
-                  Nothing found.
-                </div>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className={cn(
+                "justify-between font-normal",
+                isHorizontal
+                  ? "h-8 w-auto min-w-[132px] max-w-full gap-2 px-2"
+                  : "w-full",
               )}
+              disabled={disabled || isLoading}
+            >
+              <span className="truncate">
+                {selectedItems.length > 0
+                  ? `Selected: ${selectedItems.length}`
+                  : isLoading
+                    ? "Loading..."
+                    : placeholder}
+              </span>
 
-              <CommandGroup>
-                {filteredItems.map((item) => {
-                  const selected = selectedIds.includes(item.id);
+              <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
 
-                  return (
-                    <CommandItem
-                      key={item.id}
-                      value={item.name}
-                      onSelect={() => toggleItem(item)}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 size-4",
-                          selected ? "opacity-100" : "opacity-0",
-                        )}
-                      />
+          <PopoverContent
+            align="start"
+            className={cn(
+              "p-0",
+              isHorizontal ? "w-64" : "w-[var(--radix-popover-trigger-width)]",
+            )}
+          >
+            <Command shouldFilter={false}>
+              <CommandInput
+                placeholder={searchPlaceholder}
+                value={search}
+                onValueChange={(value) => {
+                  setSearch(value);
+                  setCreateError(null);
+                }}
+              />
 
-                      {item.name}
-                    </CommandItem>
-                  );
-                })}
-
-                {canCreate && (
-                  <CommandItem
-                    value={`create-${normalizedSearch}`}
-                    disabled={isCreating || disabled}
-                    onSelect={() => void handleCreate()}
-                  >
-                    <Plus className="mr-2 size-4" />
-
-                    {isCreating
-                      ? "Creating..."
-                      : `${createLabel} "${normalizedSearch}"`}
-                  </CommandItem>
+              <CommandList>
+                {filteredItems.length === 0 && !canCreate && (
+                  <div className="p-3 text-sm text-muted-foreground">
+                    Nothing found.
+                  </div>
                 )}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
 
+                <CommandGroup>
+                  {filteredItems.map((item) => {
+                    const selected = selectedIds.includes(item.id);
+
+                    return (
+                      <CommandItem
+                        key={item.id}
+                        value={item.name}
+                        onSelect={() => toggleItem(item)}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 size-4",
+                            selected ? "opacity-100" : "opacity-0",
+                          )}
+                        />
+
+                        {item.name}
+                      </CommandItem>
+                    );
+                  })}
+
+                  {canCreate && (
+                    <CommandItem
+                      value={`create-${normalizedSearch}`}
+                      disabled={isCreating || disabled}
+                      onSelect={() => void handleCreate()}
+                    >
+                      <Plus className="mr-2 size-4" />
+
+                      {isCreating
+                        ? "Creating..."
+                        : `${createLabel} "${normalizedSearch}"`}
+                    </CommandItem>
+                  )}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+
+        {createError && (
+          <p
+            className={cn(
+              "text-sm text-destructive",
+              isHorizontal && "basis-full",
+            )}
+          >
+            {createError}
+          </p>
+        )}
+      </div>
       {selectedItems.length > 0 && (
         <div
           className={cn(
@@ -249,17 +251,6 @@ export function CreatableMultiSelect({
           ))}
         </div>
       )}
-
-      {createError && (
-        <p
-          className={cn(
-            "text-sm text-destructive",
-            isHorizontal && "basis-full",
-          )}
-        >
-          {createError}
-        </p>
-      )}
-    </div>
+    </>
   );
 }

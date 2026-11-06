@@ -9,10 +9,13 @@ type NodeEditorPanelProps = {
   title: string;
   content: string;
   isSaving: boolean;
+  showDelete?: boolean;
+  titlePlaceholder?: string;
+  deleteLabel?: string;
   onTitleChange: (value: string) => void;
   onContentChange: (value: string) => void;
   onSave: (input: { title: string; content: string }) => void;
-  onDelete: () => void;
+  onDelete?: () => void;
 };
 
 export function NodeEditorPanel({
@@ -20,6 +23,9 @@ export function NodeEditorPanel({
   title,
   content,
   isSaving,
+  showDelete = true,
+  titlePlaceholder,
+  deleteLabel,
   onTitleChange,
   onContentChange,
   onSave,
@@ -36,6 +42,9 @@ export function NodeEditorPanel({
           onTitleChange={onTitleChange}
           onContentChange={onContentChange}
           isSaving={isSaving}
+          showDelete={showDelete}
+          titlePlaceholder={titlePlaceholder}
+          deleteLabel={deleteLabel}
           onSave={onSave}
           onDelete={onDelete}
         />

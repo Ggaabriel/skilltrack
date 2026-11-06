@@ -90,9 +90,11 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconUserCircle />
-                Account
+              <DropdownMenuItem asChild>
+                <Link to={Routes.PROFILE}>
+                  <IconUserCircle />
+                  Profile
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to={Routes.SETTINGS}>

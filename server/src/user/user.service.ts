@@ -60,6 +60,37 @@ export class UserService {
     return user;
   }
 
+  async findPublicProfile(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        picturePath: true,
+        courses: {
+          where: { isPublished: true },
+          select: {
+            id: true,
+            title: true,
+            type: true,
+          },
+          orderBy: { publishedAt: 'desc' },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+      picturePath: user.picturePath,
+      publishedCourses: user.courses,
+    };
+  }
+
   async findByEmail(email: string) {
     this.logger.log('Finding user by email', { email });
     const user = await this.prisma.user.findUnique({

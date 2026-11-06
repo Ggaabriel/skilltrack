@@ -4,5 +4,6 @@ import { NodeService } from './node.service';
 
 @Module({
   providers: [NodeResolver, NodeService],
+  exports: [NodeService],
 })
 export class NodeModule {}

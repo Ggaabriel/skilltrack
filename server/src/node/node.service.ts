@@ -50,6 +50,28 @@ export class NodeService {
     return this.buildTree(records);
   }
 
+  async findPublished(courseId: number): Promise<NodeTreeItem[]> {
+    const records = await this.findPublishedRecords(courseId);
+    return this.buildTree(records);
+  }
+
+  async findPublishedRecords(courseId: number): Promise<NodeRecord[]> {
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseId, isPublished: true },
+      select: { id: true },
+    });
+
+    if (!course) {
+      throw new NotFoundException('Published course not found');
+    }
+
+    return this.prisma.node.findMany({
+      where: { courseId },
+      select: nodeSelect,
+      orderBy: [{ position: 'asc' }, { id: 'asc' }],
+    });
+  }
+
   async findOne(id: number, userId: number): Promise<NodeTreeItem | null> {
     const node = await this.prisma.node.findFirst({
       where: {
@@ -75,7 +97,6 @@ export class NodeService {
     if (!course) {
       throw new NotFoundException('Course not found');
     }
-
     if (input.parentId != null) {
       await this.assertParentInCourse(input.parentId, input.courseId);
     }
@@ -103,7 +124,6 @@ export class NodeService {
     if (!node) {
       throw new NotFoundException('Node not found');
     }
-
     if (input.parentId != null) {
       if (input.parentId === id) {
         throw new BadRequestException('Node cannot be its own parent');
@@ -130,7 +150,6 @@ export class NodeService {
     if (!node) {
       throw new NotFoundException('Node not found');
     }
-
     const newParentId =
       input.parentId === undefined ? node.parentId : input.parentId;
     if (newParentId !== null) {
@@ -198,6 +217,14 @@ export class NodeService {
   }
 
   async remove(id: number, userId: number) {
+    const node = await this.prisma.node.findFirst({
+      where: { id, course: { is: { userId } } },
+      select: { courseId: true },
+    });
+
+    if (!node) {
+      throw new NotFoundException('Node not found');
+    }
     await this.prisma.node.delete({
       where: { id, course: { is: { userId } } },
     });

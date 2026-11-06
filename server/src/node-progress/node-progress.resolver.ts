@@ -8,6 +8,7 @@ import {
   NodeProgressListResponse,
   NodeProgressResetResponse,
   NodeProgressResponse,
+  CourseProgressListResponse,
 } from './schemas/node-progress-response.schema';
 import { NodeProgressService } from './node-progress.service';
 import { SetNodeProgressInput } from './dto/set-node-progress.input';
@@ -24,6 +25,13 @@ export class NodeProgressResolver {
   ) {
     return graphqlSuccess(
       await this.nodeProgressService.findForCourse(courseId, userId),
+    );
+  }
+
+  @Query(() => CourseProgressListResponse)
+  async myCourseProgress(@CurrentUser() { userId }: JwtPayload) {
+    return graphqlSuccess(
+      await this.nodeProgressService.findCourseProgressSummaries(userId),
     );
   }
 
@@ -45,6 +53,26 @@ export class NodeProgressResolver {
   ) {
     return graphqlSuccess(
       await this.nodeProgressService.resetForNode(userId, nodeId),
+    );
+  }
+
+  @Mutation(() => NodeProgressResetResponse)
+  async resetCourseProgress(
+    @Args('courseId', { type: () => Int }, ParseIntPipe) courseId: number,
+    @CurrentUser() { userId }: JwtPayload,
+  ) {
+    return graphqlSuccess(
+      await this.nodeProgressService.resetForCourse(userId, courseId),
+    );
+  }
+
+  @Mutation(() => NodeProgressResetResponse)
+  async removeCourseProgress(
+    @Args('courseId', { type: () => Int }, ParseIntPipe) courseId: number,
+    @CurrentUser() { userId }: JwtPayload,
+  ) {
+    return graphqlSuccess(
+      await this.nodeProgressService.removeForCourse(userId, courseId),
     );
   }
 }

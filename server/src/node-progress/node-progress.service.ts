@@ -22,7 +22,11 @@ export class NodeProgressService {
         node: {
           is: {
             courseId,
-            course: { is: { userId } },
+            course: {
+              is: {
+                OR: [{ userId }, { isPublished: true }],
+              },
+            },
           },
         },
       },
@@ -31,11 +35,128 @@ export class NodeProgressService {
     });
   }
 
+  async findCourseProgressSummaries(userId: number) {
+    const courses = await this.prisma.course.findMany({
+      where: {
+        isPublished: true,
+        nodes: {
+          some: {
+            progress: {
+              some: { userId },
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            picturePath: true,
+          },
+        },
+        nodes: {
+          select: {
+            progress: {
+              where: { userId, percentage: 100 },
+              select: { id: true },
+            },
+          },
+        },
+      },
+      orderBy: { publishedAt: 'desc' },
+    });
+
+    return courses.map((course) => {
+      const totalNodes = course.nodes.length;
+      const completedNodes = course.nodes.filter(
+        (node) => node.progress.length > 0,
+      ).length;
+
+      return {
+        id: course.id,
+        title: course.title,
+        type: course.type,
+        author: course.user,
+        totalNodes,
+        completedNodes,
+        percentage:
+          totalNodes === 0
+            ? 0
+            : Math.round((completedNodes / totalNodes) * 100),
+      };
+    });
+  }
+
+  async resetForCourse(userId: number, courseId: number) {
+    const firstNode = await this.prisma.node.findFirst({
+      where: {
+        courseId,
+        course: {
+          is: {
+            OR: [{ userId }, { isPublished: true }],
+          },
+        },
+      },
+      select: { id: true },
+      orderBy: [{ position: 'asc' }, { id: 'asc' }],
+    });
+
+    await this.prisma.$transaction(async (transaction) => {
+      await transaction.nodeProgress.deleteMany({
+        where: {
+          userId,
+          node: { is: { courseId } },
+        },
+      });
+
+      if (firstNode) {
+        await transaction.nodeProgress.create({
+          data: {
+            userId,
+            nodeId: firstNode.id,
+            percentage: 0,
+            completedAt: null,
+          },
+        });
+      }
+    });
+
+    return Boolean(firstNode);
+  }
+
+  async removeForCourse(userId: number, courseId: number) {
+    const result = await this.prisma.nodeProgress.deleteMany({
+      where: {
+        userId,
+        node: {
+          is: {
+            courseId,
+            course: {
+              is: {
+                OR: [{ userId }, { isPublished: true }],
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return result.count > 0;
+  }
+
   async setForNode(userId: number, input: SetNodeProgressInput) {
     const node = await this.prisma.node.findFirst({
       where: {
         id: input.nodeId,
-        course: { is: { userId } },
+        course: {
+          is: {
+            OR: [{ userId }, { isPublished: true }],
+          },
+        },
       },
       select: { id: true },
     });
@@ -73,7 +194,11 @@ export class NodeProgressService {
         userId,
         nodeId,
         node: {
-          course: { is: { userId } },
+          course: {
+            is: {
+              OR: [{ userId }, { isPublished: true }],
+            },
+          },
         },
       },
     });

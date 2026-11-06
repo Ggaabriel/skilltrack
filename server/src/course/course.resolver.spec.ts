@@ -1,12 +1,16 @@
 import { jest } from '@jest/globals';
 import { CourseResolver } from './course.resolver';
 import { CourseService } from './course.service';
+import { NodeService } from '../node/node.service';
 
 describe('CourseResolver', () => {
   let resolver: CourseResolver;
   const courseService = {
     findAll:
       jest.fn<(userId: number) => Promise<{ id: number; title: string }[]>>(),
+    findPublishedAll: jest.fn<() => Promise<unknown[]>>(),
+    findPublishedOne: jest.fn<(id: number) => Promise<unknown>>(),
+    publish: jest.fn<(id: number, userId: number) => Promise<unknown>>(),
     findOne: jest.fn<(id: number, userId: number) => Promise<unknown>>(),
     create: jest.fn<(userId: number, data: unknown) => Promise<unknown>>(),
     update:
@@ -15,10 +19,16 @@ describe('CourseResolver', () => {
       >(),
     remove: jest.fn<(id: number, userId: number) => Promise<boolean>>(),
   };
+  const nodeService = {
+    findPublishedRecords: jest.fn<(courseId: number) => Promise<unknown[]>>(),
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    resolver = new CourseResolver(courseService as unknown as CourseService);
+    resolver = new CourseResolver(
+      courseService as unknown as CourseService,
+      nodeService as unknown as NodeService,
+    );
   });
 
   it('wraps the course list in the standard success response', async () => {
@@ -52,5 +62,17 @@ describe('CourseResolver', () => {
 
   it('is defined', () => {
     expect(resolver).toBeDefined();
+  });
+
+  it('resolves all published course nodes as a flat list', async () => {
+    const nodes = [
+      { id: 1, parentId: null },
+      { id: 2, parentId: 1 },
+      { id: 3, parentId: null },
+    ];
+    nodeService.findPublishedRecords.mockResolvedValue(nodes);
+
+    await expect(resolver.nodes({ id: 7 } as never)).resolves.toEqual(nodes);
+    expect(nodeService.findPublishedRecords).toHaveBeenCalledWith(7);
   });
 });

@@ -22,3 +22,8 @@ export type UpdateNodeInput = {
   title?: string;
   content?: string;
 };
+
+export type MoveNodeInput = {
+  parentId: number | null;
+  position: number;
+};

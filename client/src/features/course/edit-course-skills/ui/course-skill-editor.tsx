@@ -59,7 +59,7 @@ export function CourseSkillsEditor({
     <section>
       <CreatableMultiSelect
         label="Skills"
-        placeholder="Select or create skills"
+        placeholder="Selected: 0"
         searchPlaceholder="Search or enter a skill..."
         createLabel="Create skill"
         items={availableSkills}

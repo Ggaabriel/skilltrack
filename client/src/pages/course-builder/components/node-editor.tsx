@@ -33,8 +33,11 @@ type NodeEditorProps = {
   onTitleChange: (value: string) => void;
   onContentChange: (value: string) => void;
   isSaving: boolean;
+  showDelete?: boolean;
+  titlePlaceholder?: string;
+  deleteLabel?: string;
   onSave: (input: { title: string; content: string }) => void;
-  onDelete: () => void;
+  onDelete?: () => void;
 };
 
 type ToolbarButtonProps = {
@@ -77,6 +80,9 @@ export function NodeEditor({
   onTitleChange,
   onContentChange,
   isSaving,
+  showDelete = true,
+  titlePlaceholder = "Название раздела",
+  deleteLabel = "Удалить раздел",
   onSave,
   onDelete,
 }: NodeEditorProps) {
@@ -159,7 +165,7 @@ export function NodeEditor({
           value={title}
           onChange={(event) => onTitleChange(event.target.value)}
           aria-label="Node title"
-          placeholder="Название раздела"
+          placeholder={titlePlaceholder}
         />
 
         <Button
@@ -175,17 +181,19 @@ export function NodeEditor({
           Сохранить
         </Button>
 
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          className="text-destructive"
-          aria-label="Удалить раздел"
-          title="Удалить раздел"
-          onClick={onDelete}
-        >
-          <Trash2 />
-        </Button>
+        {showDelete && (
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="text-destructive"
+            aria-label={deleteLabel}
+            title={deleteLabel}
+            onClick={onDelete}
+          >
+            <Trash2 />
+          </Button>
+        )}
       </div>
 
       {editor && (

@@ -1,5 +1,10 @@
 import * as React from "react";
-import { IconCalendarEvent, IconCode, IconBook } from "@tabler/icons-react";
+import {
+  IconCalendarEvent,
+  IconCode,
+  IconBook,
+  IconHome,
+} from "@tabler/icons-react";
 
 import {
   Sidebar,
@@ -24,6 +29,12 @@ import { useUserMeQuery } from "@/entities/user/api/user.queries";
 
 const data = {
   navMain: [
+    {
+      title: "Home",
+      url: Routes.BASE,
+      icon: IconHome,
+      access: Access.AUTHENTICATED,
+    },
     {
       title: "Calendar",
       url: Routes.CALENDAR,

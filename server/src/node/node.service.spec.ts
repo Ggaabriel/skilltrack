@@ -55,6 +55,7 @@ describe('NodeService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    prisma.course.findFirst.mockResolvedValue({ id: 7, isPublished: false });
     const module: TestingModule = await Test.createTestingModule({
       providers: [NodeService, { provide: PrismaService, useValue: prisma }],
     }).compile();
@@ -97,6 +98,24 @@ describe('NodeService', () => {
       ],
     });
     expect(tree[1]).toMatchObject({ id: 4, children: [] });
+  });
+
+  it('returns every published node as a flat ordered list', async () => {
+    const records = [
+      nodeFixture({ id: 1 }),
+      nodeFixture({ id: 3, parentId: 1 }),
+      nodeFixture({ id: 2, position: 1 }),
+    ];
+    prisma.course.findFirst.mockResolvedValue({ id: 7 });
+    prisma.node.findMany.mockResolvedValue(records);
+
+    await expect(service.findPublishedRecords(7)).resolves.toEqual(records);
+    expect(prisma.node.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { courseId: 7 },
+        orderBy: [{ position: 'asc' }, { id: 'asc' }],
+      }),
+    );
   });
 
   it('creates a node only in an owned course and validates its parent', async () => {
@@ -155,6 +174,43 @@ describe('NodeService', () => {
       }),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(prisma.node.create).not.toHaveBeenCalled();
+  });
+
+  it('allows the owner to create nodes in a published course', async () => {
+    prisma.course.findFirst.mockResolvedValue({
+      id: 7,
+      isPublished: true,
+    });
+    prisma.node.create.mockResolvedValue({ id: 14 });
+    prisma.node.findFirst.mockResolvedValue({ courseId: 7 });
+    prisma.node.findMany.mockResolvedValue([
+      nodeFixture({ id: 14, title: 'Lesson' }),
+    ]);
+
+    const node = await service.create(42, {
+      courseId: 7,
+      title: 'Lesson',
+      content: 'Lesson content',
+      position: 0,
+    });
+
+    expect(node).toMatchObject({ id: 14, title: 'Lesson' });
+    expect(prisma.node.create).toHaveBeenCalled();
+  });
+
+  it('allows the owner to update nodes in a published course', async () => {
+    prisma.node.findFirst
+      .mockResolvedValueOnce({ id: 1, courseId: 7 })
+      .mockResolvedValueOnce({ courseId: 7 });
+    prisma.node.findMany.mockResolvedValue([
+      nodeFixture({ id: 1, title: 'Updated title' }),
+    ]);
+    prisma.node.update.mockResolvedValue({ id: 1 });
+
+    const node = await service.update(1, 42, { title: 'Updated title' });
+
+    expect(node).toMatchObject({ title: 'Updated title' });
+    expect(prisma.node.update).toHaveBeenCalled();
   });
 
   it('rejects assigning a parent from another course', async () => {

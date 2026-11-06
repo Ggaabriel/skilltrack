@@ -1,11 +1,13 @@
-import { Pencil } from "lucide-react";
+import { CheckCircle2, Eye, LoaderCircle, Pencil } from "lucide-react";
+import { Link } from "react-router";
 
 import { Button } from "@/components/ui/button";
 import type { CourseTag } from "@/entities/course/api/types";
 import type { Tag } from "@/entities/tag/api/tag.api";
 import type { Skill } from "@/entities/skill/api/skill.api";
 import { CourseTagsEditor } from "@/features/course/edit-course-tags";
-import { CourseSkillsEditor } from "@/features/course/edit-course-skills/ui/course-skill-editor";
+import { CourseSkillsEditor } from "@/features/course/edit-course-skills";
+import { Routes } from "@/shared/routing/routes";
 
 type CourseHeaderProps = {
   courseId: string;
@@ -20,7 +22,10 @@ type CourseHeaderProps = {
   availableSkills: Skill[];
   isTagsLoading: boolean;
   isSkillsLoading: boolean;
+  isPublished: boolean;
+  isPublishing: boolean;
   onEdit: () => void;
+  onPublish: () => void;
 };
 
 function formatDate(value: string | Date) {
@@ -40,7 +45,10 @@ export function CourseHeader({
   availableSkills,
   isTagsLoading,
   isSkillsLoading,
+  isPublished,
+  isPublishing,
   onEdit,
+  onPublish,
 }: CourseHeaderProps) {
   const tagKey = courseTags
     .map((tag) => tag.id)
@@ -64,6 +72,34 @@ export function CourseHeader({
             <Pencil className="size-3.5" />
             Edit details
           </Button>
+
+          {isPublished ? (
+            <>
+              <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                Published
+              </span>
+              <Button asChild size="sm" variant="outline">
+                <Link to={Routes.COURSE_READER.replace(":courseId", courseId)}>
+                  <Eye />
+                  View course
+                </Link>
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              onClick={onPublish}
+              disabled={isPublishing}
+            >
+              {isPublishing ? (
+                <LoaderCircle className="animate-spin" />
+              ) : (
+                <CheckCircle2 />
+              )}
+              Finish and publish
+            </Button>
+          )}
 
           <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
             {courseType}

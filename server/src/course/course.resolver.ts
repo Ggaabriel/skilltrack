@@ -1,6 +1,15 @@
 import { ParseIntPipe, UseGuards } from '@nestjs/common';
 
-import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  ID,
+  Int,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 
 import { CourseService } from './course.service';
 
@@ -20,15 +29,37 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 import type { JwtPayload } from '../auth/types/jwt-payload';
+import { NodeService } from '../node/node.service';
+import { CourseNode } from '../node/schemas/node.schema';
 
 @Resolver(() => Course)
 @UseGuards(JwtAuthGuard)
 export class CourseResolver {
-  constructor(private readonly courseService: CourseService) {}
+  constructor(
+    private readonly courseService: CourseService,
+    private readonly nodeService: NodeService,
+  ) {}
 
   @Query(() => CoursesResponse)
   async courses(@CurrentUser() { userId }: JwtPayload) {
     return graphqlSuccess(await this.courseService.findAll(userId));
+  }
+
+  @Query(() => CoursesResponse)
+  async publishedCourses() {
+    return graphqlSuccess(await this.courseService.findPublishedAll());
+  }
+
+  @Query(() => CourseResponse)
+  async publishedCourse(
+    @Args('id', { type: () => ID }, ParseIntPipe) id: number,
+  ) {
+    return graphqlSuccess(await this.courseService.findPublishedOne(id));
+  }
+
+  @ResolveField(() => [CourseNode])
+  nodes(@Parent() course: Course) {
+    return this.nodeService.findPublishedRecords(course.id);
   }
 
   @Query(() => CourseResponse)
@@ -56,6 +87,14 @@ export class CourseResolver {
     @CurrentUser() { userId }: JwtPayload,
   ) {
     return graphqlSuccess(await this.courseService.update(id, userId, input));
+  }
+
+  @Mutation(() => CourseResponse)
+  async publishCourse(
+    @Args('id', { type: () => ID }, ParseIntPipe) id: number,
+    @CurrentUser() { userId }: JwtPayload,
+  ) {
+    return graphqlSuccess(await this.courseService.publish(id, userId));
   }
 
   @Mutation(() => CourseResponse)

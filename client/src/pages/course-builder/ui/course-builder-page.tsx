@@ -1,20 +1,20 @@
-import { useMemo, useState } from "react";
-
-import { useParams } from "react-router";
+import { LoaderCircle } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-
 import { useCourseQuery } from "@/entities/course/api/course.queries";
 import { useUpdateCourseMutation } from "@/entities/course/api/course.mutations";
+import { usePublishCourseMutation } from "@/entities/course/api/course.mutations";
 import { useTagsQuery } from "@/entities/tag/api/tag.queries";
 import {
   useCreateNodeMutation,
   useDeleteNodeMutation,
+  useMoveNodeMutation,
   useNodesQuery,
   useUpdateNodeMutation,
   type CourseNode,
 } from "@/entities/node";
 import { useSkillsQuery } from "@/entities/skill/api/skill.queries";
-
 import { BuilderMessage, BuilderSkeleton } from "../components/builder-states";
 import { CourseHeader } from "../components/course-header";
 import { EditCourseDialog } from "../components/edit-course-dialog";
@@ -22,9 +22,11 @@ import { CourseTreePanel } from "../components/course-tree-panel";
 import { DeleteNodeDialog } from "../components/delete-node-dialog";
 import { NodeEditorPanel } from "../components/node-editor-panel";
 import { findNode } from "../lib/find-node";
+import { Routes } from "@/shared/routing/routes";
 
 export function CourseBuilderPage() {
   const { courseId = "" } = useParams();
+  const navigate = useNavigate();
 
   const numericCourseId = Number(courseId);
   const validCourseId =
@@ -32,9 +34,11 @@ export function CourseBuilderPage() {
 
   const course = useCourseQuery(courseId);
   const updateCourse = useUpdateCourseMutation();
+  const publishCourse = usePublishCourseMutation();
   const nodes = useNodesQuery(validCourseId ? numericCourseId : null);
 
   const createNode = useCreateNodeMutation(numericCourseId);
+  const moveNode = useMoveNodeMutation(numericCourseId);
   const updateNode = useUpdateNodeMutation(numericCourseId);
   const deleteNode = useDeleteNodeMutation(numericCourseId);
 
@@ -46,16 +50,48 @@ export function CourseBuilderPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isCourseDetailsOpen, setIsCourseDetailsOpen] = useState(false);
+  const quickNoteCreationAttemptedFor = useRef<string | null>(null);
 
   const activeNode = useMemo(
-    () => findNode(nodes.data ?? [], activeNodeId),
-    [nodes.data, activeNodeId],
+    () =>
+      course.data?.type === "QUICK_NOTE"
+        ? (nodes.data?.[0] ?? null)
+        : findNode(nodes.data ?? [], activeNodeId),
+    [course.data?.type, nodes.data, activeNodeId],
   );
 
-  function selectNode(node: CourseNode) {
+  const selectNode = useCallback((node: CourseNode) => {
     setActiveNodeId(node.id);
     setTitle(node.title);
     setContent(node.content);
+  }, []);
+
+  function clearSelection() {
+    setActiveNodeId(null);
+    setTitle("");
+    setContent("");
+  }
+
+  function changeNodeTitle(value: string) {
+    if (
+      course.data?.type === "QUICK_NOTE" &&
+      activeNodeId === null &&
+      activeNode
+    ) {
+      setActiveNodeId(activeNode.id);
+    }
+    setTitle(value);
+  }
+
+  function changeNodeContent(value: string) {
+    if (
+      course.data?.type === "QUICK_NOTE" &&
+      activeNodeId === null &&
+      activeNode
+    ) {
+      setActiveNodeId(activeNode.id);
+    }
+    setContent(value);
   }
 
   function addNode(parent: CourseNode | null) {
@@ -73,6 +109,155 @@ export function CourseBuilderPage() {
           selectNode(node);
           toast.success("Node created");
         },
+        onError: (error) => toast.error(error.message),
+      },
+    );
+  }
+
+  function addFreeFormNote() {
+    createNode.mutate(
+      {
+        title: "Untitled note",
+        content: "",
+        position: (nodes.data ?? []).length,
+        parentId: null,
+      },
+      {
+        onSuccess: (node) => {
+          selectNode(node);
+          toast.success("Note created");
+        },
+        onError: (error) => toast.error(error.message),
+      },
+    );
+  }
+
+  const createQuickNote = useCallback(() => {
+    quickNoteCreationAttemptedFor.current = courseId;
+    createNode.mutate(
+      {
+        title: course.data?.title ?? "Quick note",
+        content: "",
+        position: 0,
+        parentId: null,
+      },
+      {
+        onSuccess: (node) => {
+          selectNode(node);
+          toast.success("Note created");
+        },
+        onError: (error) => {
+          toast.error(error.message);
+        },
+      },
+    );
+  }, [course.data?.title, courseId, createNode, selectNode]);
+
+  useEffect(() => {
+    if (
+      course.data?.type === "QUICK_NOTE" &&
+      nodes.isSuccess &&
+      nodes.data.length === 0 &&
+      !createNode.isPending &&
+      quickNoteCreationAttemptedFor.current !== courseId
+    ) {
+      createQuickNote();
+    }
+  }, [
+    course.data?.type,
+    nodes.isSuccess,
+    nodes.data,
+    createNode.isPending,
+    courseId,
+    createQuickNote,
+  ]);
+
+  function handleMoveNode(
+    draggedNodeId: string,
+    targetNode: CourseNode,
+    placement: "before" | "inside",
+  ) {
+    const tree = nodes.data ?? [];
+    const draggedNode = findNode(tree, draggedNodeId);
+    if (!draggedNode || draggedNode.id === targetNode.id) return;
+    if (findNode(draggedNode.children, targetNode.id)) return;
+    if (course.data?.type === "FREE_FORM" && placement === "inside") return;
+
+    let parentId: number | null;
+    let siblings: CourseNode[];
+    let position: number;
+
+    if (placement === "inside") {
+      parentId = Number(targetNode.id);
+      siblings = targetNode.children.filter(
+        (sibling) => sibling.id !== draggedNode.id,
+      );
+      position = siblings.length;
+    } else {
+      parentId = targetNode.parentId;
+      const parent =
+        parentId === null ? null : findNode(tree, String(parentId));
+      siblings = (parent ? parent.children : tree).filter(
+        (sibling) => sibling.id !== draggedNode.id,
+      );
+      const targetIndex = siblings.findIndex(
+        (sibling) => sibling.id === targetNode.id,
+      );
+      if (targetIndex === -1) return;
+      position = targetIndex;
+    }
+
+    const currentSiblings =
+      draggedNode.parentId === null
+        ? tree
+        : (findNode(tree, String(draggedNode.parentId))?.children ?? []);
+    const currentPosition = currentSiblings.findIndex(
+      (sibling) => sibling.id === draggedNode.id,
+    );
+    if (draggedNode.parentId === parentId && currentPosition === position) {
+      return;
+    }
+
+    moveNode.mutate(
+      {
+        id: draggedNode.id,
+        input: { parentId, position },
+      },
+      {
+        onSuccess: () => toast.success("Node moved"),
+        onError: (error) => toast.error(error.message),
+      },
+    );
+  }
+
+  function handleMoveNodeToRoot(
+    draggedNodeId: string,
+    position: "start" | "end",
+  ) {
+    const tree = nodes.data ?? [];
+    const draggedNode = findNode(tree, draggedNodeId);
+    if (!draggedNode) return;
+
+    const rootsWithoutDraggedNode = tree.filter(
+      (node) => node.id !== draggedNode.id,
+    );
+    const targetPosition =
+      position === "start" ? 0 : rootsWithoutDraggedNode.length;
+    const currentPosition = tree.findIndex(
+      (node) => node.id === draggedNode.id,
+    );
+
+    if (draggedNode.parentId === null && currentPosition === targetPosition) {
+      return;
+    }
+
+    moveNode.mutate(
+      {
+        id: draggedNode.id,
+        input: { parentId: null, position: targetPosition },
+      },
+      {
+        onSuccess: () => toast.success("Node moved"),
         onError: (error) => toast.error(error.message),
       },
     );
@@ -134,6 +319,23 @@ export function CourseBuilderPage() {
     );
   }
 
+  function finishCourse() {
+    if (nodes.isLoading || !nodes.data?.length) {
+      toast.error("Add at least one note before publishing the course.");
+      return;
+    }
+
+    publishCourse.mutate(courseId, {
+      onSuccess: () => {
+        toast.success("Course published and added to the catalog.");
+        navigate(Routes.COURSE_READER.replace(":courseId", courseId), {
+          replace: true,
+        });
+      },
+      onError: (error) => toast.error(error.message),
+    });
+  }
+
   if (!validCourseId) {
     return (
       <BuilderMessage
@@ -184,34 +386,126 @@ export function CourseBuilderPage() {
           availableSkills={skills}
           isTagsLoading={isTagsLoading}
           isSkillsLoading={isSkillsLoading}
+          isPublished={courseData.isPublished}
+          isPublishing={publishCourse.isPending}
           onEdit={() => setIsCourseDetailsOpen(true)}
+          onPublish={finishCourse}
         />
 
-        <div className="grid min-h-[620px] flex-1 overflow-hidden rounded-xl border lg:grid-cols-[260px_minmax(0,1fr)]">
-          <CourseTreePanel
-            nodes={nodes.data ?? []}
-            isLoading={nodes.isLoading}
-            error={nodes.isError ? nodes.error.message : null}
-            activeNodeId={activeNodeId}
-            isCreating={createNode.isPending}
-            onAddRoot={() => addNode(null)}
-            onSelectNode={selectNode}
-            onAddChild={addNode}
-            onDeleteNode={setNodeToDelete}
-          />
+        <div
+          className={`grid min-h-[620px] flex-1 overflow-hidden rounded-xl border ${
+            courseData.type === "QUICK_NOTE"
+              ? "grid-cols-1"
+              : "lg:grid-cols-[260px_minmax(0,1fr)]"
+          }`}
+        >
+          {courseData.type === "QUICK_NOTE" ? (
+            activeNode ? (
+              <NodeEditorPanel
+                node={activeNode}
+                title={
+                  activeNodeId === null ? (activeNode?.title ?? title) : title
+                }
+                content={
+                  activeNodeId === null
+                    ? (activeNode?.content ?? content)
+                    : content
+                }
+                isSaving={updateNode.isPending}
+                showDelete={false}
+                onTitleChange={changeNodeTitle}
+                onContentChange={changeNodeContent}
+                onSave={saveActiveNode}
+              />
+            ) : (
+              <section className="flex flex-col items-center justify-center gap-3 p-6 text-center">
+                {nodes.isError || createNode.isError ? (
+                  <BuilderMessage
+                    title={
+                      nodes.isError
+                        ? "Could not load note"
+                        : "Could not create note"
+                    }
+                    description={
+                      nodes.isError
+                        ? nodes.error.message
+                        : (createNode.error?.message ??
+                          "The note could not be created.")
+                    }
+                    retry={() => {
+                      if (nodes.isError) {
+                        void nodes.refetch();
+                        return;
+                      }
+                      quickNoteCreationAttemptedFor.current = null;
+                      createQuickNote();
+                    }}
+                  />
+                ) : (
+                  <>
+                    <LoaderCircle className="size-6 animate-spin text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      Creating your note…
+                    </p>
+                  </>
+                )}
+              </section>
+            )
+          ) : (
+            <>
+              <CourseTreePanel
+                nodes={nodes.data ?? []}
+                isLoading={nodes.isLoading}
+                error={nodes.isError ? nodes.error.message : null}
+                activeNodeId={activeNodeId}
+                isCreating={createNode.isPending}
+                isMoving={moveNode.isPending}
+                onAddNode={() =>
+                  courseData.type === "FREE_FORM"
+                    ? addFreeFormNote()
+                    : addNode(activeNode)
+                }
+                onSelectNode={selectNode}
+                onClearSelection={clearSelection}
+                onDeleteNode={setNodeToDelete}
+                onMoveNodeToRoot={handleMoveNodeToRoot}
+                onMoveNode={handleMoveNode}
+                title={courseData.type === "FREE_FORM" ? "Notes" : undefined}
+                addNodeLabel={
+                  courseData.type === "FREE_FORM" ? "Add note" : undefined
+                }
+                emptyMessage={
+                  courseData.type === "FREE_FORM"
+                    ? "No notes yet. Add a note to collect ideas and references."
+                    : undefined
+                }
+                allowNesting={courseData.type !== "FREE_FORM"}
+              />
 
-          <NodeEditorPanel
-            node={activeNode}
-            title={title}
-            content={content}
-            isSaving={updateNode.isPending}
-            onTitleChange={setTitle}
-            onContentChange={setContent}
-            onSave={saveActiveNode}
-            onDelete={() => {
-              if (activeNode) setNodeToDelete(activeNode);
-            }}
-          />
+              <NodeEditorPanel
+                node={activeNode}
+                title={title}
+                content={content}
+                isSaving={updateNode.isPending}
+                titlePlaceholder={
+                  courseData.type === "FREE_FORM"
+                    ? "Название заметки"
+                    : undefined
+                }
+                deleteLabel={
+                  courseData.type === "FREE_FORM"
+                    ? "Удалить заметку"
+                    : undefined
+                }
+                onTitleChange={setTitle}
+                onContentChange={setContent}
+                onSave={saveActiveNode}
+                onDelete={() => {
+                  if (activeNode) setNodeToDelete(activeNode);
+                }}
+              />
+            </>
+          )}
         </div>
       </div>
 

@@ -23,7 +23,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDeleteCourseMutation } from "@/entities/course/api/course.mutations";
-import { useCoursesQuery } from "@/entities/course/api/course.queries";
+import {
+  useCoursesQuery,
+  usePublishedCoursesQuery,
+} from "@/entities/course/api/course.queries";
 import type { Course } from "@/entities/course/api/types";
 import { CreateCourseDialog } from "@/features/course/create-course";
 import { Routes } from "@/shared/routing/routes";
@@ -37,6 +40,7 @@ export function CoursesPage() {
     refetch,
   } = useCoursesQuery();
   const deleteCourseMutation = useDeleteCourseMutation();
+  const publishedCoursesQuery = usePublishedCoursesQuery();
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
 
   const confirmDelete = () => {
@@ -130,11 +134,46 @@ export function CoursesPage() {
                         <span className="text-xs text-muted-foreground">
                           {course.type}
                         </span>
-                        <Button asChild size="sm">
-                          <Link to={`${Routes.COURSES}/${course.id}/builder`}>
-                            Open
-                          </Link>
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {course.isPublished ? "Published" : "Draft"}
+                          </span>
+                          {course.isPublished ? (
+                            <>
+                              <Button asChild size="sm">
+                                <Link
+                                  to={Routes.COURSE_BUILDER.replace(
+                                    ":courseId",
+                                    course.id,
+                                  )}
+                                >
+                                  Edit
+                                </Link>
+                              </Button>
+                              <Button asChild size="sm" variant="outline">
+                                <Link
+                                  to={Routes.COURSE_READER.replace(
+                                    ":courseId",
+                                    course.id,
+                                  )}
+                                >
+                                  Read
+                                </Link>
+                              </Button>
+                            </>
+                          ) : (
+                            <Button asChild size="sm">
+                              <Link
+                                to={Routes.COURSE_BUILDER.replace(
+                                  ":courseId",
+                                  course.id,
+                                )}
+                              >
+                                Open
+                              </Link>
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -144,11 +183,91 @@ export function CoursesPage() {
           </TabsContent>
 
           <TabsContent value="catalog" className="mt-6">
-            <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed">
-              <p className="text-sm text-muted-foreground">
-                Public courses will appear here.
-              </p>
-            </div>
+            {publishedCoursesQuery.isLoading && <CoursesSkeleton />}
+
+            {publishedCoursesQuery.isError && (
+              <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-destructive/30">
+                <p className="text-sm text-destructive">
+                  {publishedCoursesQuery.error.message}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => void publishedCoursesQuery.refetch()}
+                >
+                  Try again
+                </Button>
+              </div>
+            )}
+
+            {!publishedCoursesQuery.isLoading &&
+              !publishedCoursesQuery.isError &&
+              publishedCoursesQuery.data?.length === 0 && (
+                <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed">
+                  <p className="text-sm text-muted-foreground">
+                    No published courses yet.
+                  </p>
+                </div>
+              )}
+
+            {!publishedCoursesQuery.isLoading &&
+              !publishedCoursesQuery.isError &&
+              publishedCoursesQuery.data &&
+              publishedCoursesQuery.data.length > 0 && (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {publishedCoursesQuery.data.map((course) => (
+                    <Card key={course.id}>
+                      <CardHeader>
+                        <CardTitle className="line-clamp-2">
+                          {course.title}
+                        </CardTitle>
+                        {course.author && (
+                          <Link
+                            className="text-sm text-muted-foreground hover:text-foreground"
+                            to={Routes.USER_PROFILE.replace(
+                              ":userId",
+                              String(course.author.id),
+                            )}
+                          >
+                            By {course.author.name}
+                          </Link>
+                        )}
+                        {course.description && (
+                          <CardDescription className="line-clamp-3">
+                            {course.description}
+                          </CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex flex-wrap gap-2">
+                          {course.tags.map((tag) => (
+                            <span
+                              key={tag.id}
+                              className="rounded-md bg-muted px-2 py-1 text-xs"
+                            >
+                              #{tag.name}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            {course.type.replaceAll("_", " ")}
+                          </span>
+                          <Button asChild size="sm">
+                            <Link
+                              to={Routes.COURSE_READER.replace(
+                                ":courseId",
+                                course.id,
+                              )}
+                            >
+                              Read course
+                            </Link>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
           </TabsContent>
         </Tabs>
       </div>
