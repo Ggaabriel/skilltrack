@@ -2,10 +2,36 @@ import { jest } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { MetadataCleanupService } from '../metadata-cleanup/metadata-cleanup.service';
 import { CourseService } from './course.service';
 
 describe('CourseService', () => {
   let service: CourseService;
+  const transaction = {
+    course: {
+      findUniqueOrThrow: jest.fn<(...args: any[]) => Promise<unknown>>(),
+      delete: jest.fn<(...args: any[]) => Promise<unknown>>(),
+    },
+    node: {
+      findMany: jest.fn<(...args: any[]) => Promise<any[]>>(),
+    },
+    nodeTag: {
+      findMany: jest.fn<(...args: any[]) => Promise<{ tagId: number }[]>>(),
+      deleteMany: jest.fn<(...args: any[]) => Promise<unknown>>(),
+      createMany: jest.fn<(...args: any[]) => Promise<unknown>>(),
+    },
+    nodeSkill: {
+      findMany: jest.fn<(...args: any[]) => Promise<{ skillId: number }[]>>(),
+      deleteMany: jest.fn<(...args: any[]) => Promise<unknown>>(),
+      createMany: jest.fn<(...args: any[]) => Promise<unknown>>(),
+    },
+    tag: {
+      findMany: jest.fn<(...args: any[]) => Promise<{ id: number }[]>>(),
+    },
+    skill: {
+      findMany: jest.fn<(...args: any[]) => Promise<{ id: number }[]>>(),
+    },
+  };
 
   const course = {
     id: 13,
@@ -23,8 +49,7 @@ describe('CourseService', () => {
       picturePath: null,
     },
 
-    tags: [],
-    skills: [],
+    nodes: [],
   };
 
   const prisma = {
@@ -37,7 +62,15 @@ describe('CourseService', () => {
       delete: jest.fn<(...args: any[]) => Promise<unknown>>(),
     },
 
-    $transaction: jest.fn(),
+    $transaction: jest.fn(
+      async (
+        callback: (tx: typeof transaction) => Promise<unknown>,
+      ): Promise<unknown> => callback(transaction),
+    ),
+  };
+  const metadataCleanup = {
+    cleanupUnusedTags: jest.fn(),
+    cleanupUnusedSkills: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -49,6 +82,15 @@ describe('CourseService', () => {
     prisma.course.create.mockResolvedValue(course);
     prisma.course.update.mockResolvedValue(course);
     prisma.course.delete.mockResolvedValue(course);
+    transaction.course.findUniqueOrThrow.mockResolvedValue(course);
+    transaction.course.delete.mockResolvedValue(course);
+    transaction.node.findMany.mockResolvedValue([]);
+    transaction.nodeTag.findMany.mockResolvedValue([]);
+    transaction.nodeSkill.findMany.mockResolvedValue([]);
+    transaction.tag.findMany.mockResolvedValue([]);
+    transaction.skill.findMany.mockResolvedValue([]);
+    metadataCleanup.cleanupUnusedTags.mockResolvedValue({ count: 0 });
+    metadataCleanup.cleanupUnusedSkills.mockResolvedValue({ count: 0 });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -56,6 +98,10 @@ describe('CourseService', () => {
         {
           provide: PrismaService,
           useValue: prisma,
+        },
+        {
+          provide: MetadataCleanupService,
+          useValue: metadataCleanup,
         },
       ],
     }).compile();
@@ -67,7 +113,7 @@ describe('CourseService', () => {
     expect(service).toBeDefined();
   });
 
-  it('filters the course list by its owner and selects course fields with tags and skills', async () => {
+  it('filters the course list by its owner and selects node tags and skills', async () => {
     await service.findAll(42);
 
     expect(prisma.course.findMany).toHaveBeenCalledWith({
@@ -92,27 +138,31 @@ describe('CourseService', () => {
           },
         },
 
-        tags: {
+        nodes: {
           select: {
-            tag: {
+            tags: {
               select: {
-                id: true,
-                name: true,
-                createdAt: true,
-                updatedAt: true,
+                tag: {
+                  select: {
+                    id: true,
+                    name: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
               },
             },
-          },
-        },
 
-        skills: {
-          select: {
-            skill: {
+            skills: {
               select: {
-                id: true,
-                name: true,
-                createdAt: true,
-                updatedAt: true,
+                skill: {
+                  select: {
+                    id: true,
+                    name: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
               },
             },
           },
@@ -150,27 +200,31 @@ describe('CourseService', () => {
           },
         },
 
-        tags: {
+        nodes: {
           select: {
-            tag: {
+            tags: {
               select: {
-                id: true,
-                name: true,
-                createdAt: true,
-                updatedAt: true,
+                tag: {
+                  select: {
+                    id: true,
+                    name: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
               },
             },
-          },
-        },
 
-        skills: {
-          select: {
-            skill: {
+            skills: {
               select: {
-                id: true,
-                name: true,
-                createdAt: true,
-                updatedAt: true,
+                skill: {
+                  select: {
+                    id: true,
+                    name: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
               },
             },
           },
@@ -178,8 +232,13 @@ describe('CourseService', () => {
       },
     });
 
-    const { user, ...courseData } = course;
-    expect(result).toEqual({ ...courseData, author: user });
+    expect(result).toMatchObject({
+      id: course.id,
+      author: course.user,
+      tags: [],
+      skills: [],
+    });
+    expect(result).not.toHaveProperty('nodes');
   });
 
   it('scopes update operation by owner', async () => {
@@ -242,7 +301,58 @@ describe('CourseService', () => {
     expect(prisma.course.update).toHaveBeenCalled();
   });
 
+  it('applies course tags to every node and cleans only detached metadata', async () => {
+    transaction.tag.findMany.mockResolvedValue([{ id: 3 }]);
+    transaction.node.findMany.mockResolvedValue([
+      { id: 11, tags: [{ tagId: 2 }] },
+      { id: 12, tags: [{ tagId: 2 }] },
+    ]);
+
+    await service.updateTags(13, 42, [3, 3]);
+
+    expect(transaction.nodeTag.deleteMany).toHaveBeenCalledWith({
+      where: { nodeId: { in: [11, 12] } },
+    });
+    expect(transaction.nodeTag.createMany).toHaveBeenCalledWith({
+      data: [
+        { nodeId: 11, tagId: 3 },
+        { nodeId: 12, tagId: 3 },
+      ],
+    });
+    expect(metadataCleanup.cleanupUnusedTags).toHaveBeenCalledWith(
+      transaction,
+      [2],
+    );
+  });
+
+  it('applies course skills to every node and cleans only detached metadata', async () => {
+    transaction.skill.findMany.mockResolvedValue([{ id: 5 }]);
+    transaction.node.findMany.mockResolvedValue([
+      { id: 11, skills: [{ skillId: 4 }] },
+      { id: 12, skills: [{ skillId: 4 }] },
+    ]);
+
+    await service.updateSkills(13, 42, [5]);
+
+    expect(transaction.nodeSkill.deleteMany).toHaveBeenCalledWith({
+      where: { nodeId: { in: [11, 12] } },
+    });
+    expect(transaction.nodeSkill.createMany).toHaveBeenCalledWith({
+      data: [
+        { nodeId: 11, skillId: 5 },
+        { nodeId: 12, skillId: 5 },
+      ],
+    });
+    expect(metadataCleanup.cleanupUnusedSkills).toHaveBeenCalledWith(
+      transaction,
+      [4],
+    );
+  });
+
   it('scopes delete operation by owner', async () => {
+    transaction.nodeTag.findMany.mockResolvedValue([{ tagId: 6 }]);
+    transaction.nodeSkill.findMany.mockResolvedValue([{ skillId: 8 }]);
+
     await service.remove(13, 42);
 
     expect(prisma.course.findFirst).toHaveBeenCalledWith({
@@ -253,10 +363,26 @@ describe('CourseService', () => {
       select: expect.any(Object) as object,
     });
 
-    expect(prisma.course.delete).toHaveBeenCalledWith({
+    expect(transaction.course.delete).toHaveBeenCalledWith({
       where: {
         id: 13,
       },
     });
+    expect(transaction.nodeTag.findMany).toHaveBeenCalledWith({
+      where: { node: { is: { courseId: 13 } } },
+      select: { tagId: true },
+    });
+    expect(transaction.nodeSkill.findMany).toHaveBeenCalledWith({
+      where: { node: { is: { courseId: 13 } } },
+      select: { skillId: true },
+    });
+    expect(metadataCleanup.cleanupUnusedTags).toHaveBeenCalledWith(
+      transaction,
+      [6],
+    );
+    expect(metadataCleanup.cleanupUnusedSkills).toHaveBeenCalledWith(
+      transaction,
+      [8],
+    );
   });
 });

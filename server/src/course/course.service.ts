@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from 'src/generated/prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { MetadataCleanupService } from '../metadata-cleanup/metadata-cleanup.service';
 
 const courseSelect = {
   id: true,
@@ -20,27 +25,30 @@ const courseSelect = {
     },
   },
 
-  tags: {
+  nodes: {
     select: {
-      tag: {
+      tags: {
         select: {
-          id: true,
-          name: true,
-          createdAt: true,
-          updatedAt: true,
+          tag: {
+            select: {
+              id: true,
+              name: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
         },
       },
-    },
-  },
-
-  skills: {
-    select: {
-      skill: {
+      skills: {
         select: {
-          id: true,
-          name: true,
-          createdAt: true,
-          updatedAt: true,
+          skill: {
+            select: {
+              id: true,
+              name: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
         },
       },
     },
@@ -52,19 +60,30 @@ type CourseWithRelations = Prisma.CourseGetPayload<{
 }>;
 
 function mapCourse(course: CourseWithRelations) {
-  const { user, ...courseData } = course;
+  const { user, nodes, ...courseData } = course;
+  const tags = new Map(
+    nodes.flatMap((node) => node.tags.map(({ tag }) => [tag.id, tag] as const)),
+  );
+  const skills = new Map(
+    nodes.flatMap((node) =>
+      node.skills.map(({ skill }) => [skill.id, skill] as const),
+    ),
+  );
 
   return {
     ...courseData,
     author: user,
-    tags: course.tags.map(({ tag }) => tag),
-    skills: course.skills.map(({ skill }) => skill),
+    tags: [...tags.values()],
+    skills: [...skills.values()],
   };
 }
 
 @Injectable()
 export class CourseService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly metadataCleanup: MetadataCleanupService,
+  ) {}
 
   async findAll(userId: number) {
     const courses = await this.prisma.course.findMany({
@@ -176,103 +195,141 @@ export class CourseService {
 
   async updateTags(courseId: number, userId: number, tagIds: number[]) {
     await this.assertOwned(courseId, userId);
-
     const uniqueTagIds = [...new Set(tagIds)];
 
     return this.prisma.$transaction(async (tx) => {
       const tags = await tx.tag.findMany({
-        where: {
-          id: {
-            in: uniqueTagIds,
-          },
-        },
-        select: {
-          id: true,
-        },
+        where: { id: { in: uniqueTagIds } },
+        select: { id: true },
       });
-
       if (tags.length !== uniqueTagIds.length) {
         throw new NotFoundException('One or more tags not found');
       }
 
-      await tx.courseTag.deleteMany({
-        where: {
-          courseId,
+      const nodes = await tx.node.findMany({
+        where: { courseId },
+        select: {
+          id: true,
+          tags: { select: { tagId: true } },
         },
       });
-
-      if (uniqueTagIds.length > 0) {
-        await tx.courseTag.createMany({
-          data: uniqueTagIds.map((tagId) => ({
-            courseId,
-            tagId,
-          })),
+      const nodeIds = nodes.map(({ id }) => id);
+      if (nodeIds.length === 0 && uniqueTagIds.length > 0) {
+        throw new BadRequestException(
+          'Create a node before assigning course tags',
+        );
+      }
+      if (nodeIds.length > 0) {
+        await tx.nodeTag.deleteMany({
+          where: { nodeId: { in: nodeIds } },
         });
+        if (uniqueTagIds.length > 0) {
+          await tx.nodeTag.createMany({
+            data: nodeIds.flatMap((nodeId) =>
+              uniqueTagIds.map((tagId) => ({ nodeId, tagId })),
+            ),
+          });
+        }
+
+        const previousTagIds = [
+          ...new Set(
+            nodes.flatMap((node) => node.tags.map(({ tagId }) => tagId)),
+          ),
+        ];
+        await this.metadataCleanup.cleanupUnusedTags(tx, previousTagIds);
       }
 
-      const course = await tx.course.findUniqueOrThrow({
-        where: {
-          id: courseId,
-        },
-        select: courseSelect,
-      });
-
-      return mapCourse(course);
+      return mapCourse(
+        await tx.course.findUniqueOrThrow({
+          where: { id: courseId },
+          select: courseSelect,
+        }),
+      );
     });
   }
 
   async updateSkills(courseId: number, userId: number, skillIds: number[]) {
     await this.assertOwned(courseId, userId);
-
     const uniqueSkillIds = [...new Set(skillIds)];
 
     return this.prisma.$transaction(async (tx) => {
       const skills = await tx.skill.findMany({
-        where: {
-          id: {
-            in: uniqueSkillIds,
-          },
-        },
-        select: {
-          id: true,
-        },
+        where: { id: { in: uniqueSkillIds } },
+        select: { id: true },
       });
-
       if (skills.length !== uniqueSkillIds.length) {
         throw new NotFoundException('One or more skills not found');
       }
 
-      await tx.courseSkill.deleteMany({
-        where: {
-          courseId,
+      const nodes = await tx.node.findMany({
+        where: { courseId },
+        select: {
+          id: true,
+          skills: { select: { skillId: true } },
         },
       });
-
-      if (uniqueSkillIds.length > 0) {
-        await tx.courseSkill.createMany({
-          data: uniqueSkillIds.map((skillId) => ({
-            courseId,
-            skillId,
-          })),
+      const nodeIds = nodes.map(({ id }) => id);
+      if (nodeIds.length === 0 && uniqueSkillIds.length > 0) {
+        throw new BadRequestException(
+          'Create a node before assigning course skills',
+        );
+      }
+      if (nodeIds.length > 0) {
+        await tx.nodeSkill.deleteMany({
+          where: { nodeId: { in: nodeIds } },
         });
+        if (uniqueSkillIds.length > 0) {
+          await tx.nodeSkill.createMany({
+            data: nodeIds.flatMap((nodeId) =>
+              uniqueSkillIds.map((skillId) => ({ nodeId, skillId })),
+            ),
+          });
+        }
+
+        const previousSkillIds = [
+          ...new Set(
+            nodes.flatMap((node) => node.skills.map(({ skillId }) => skillId)),
+          ),
+        ];
+        await this.metadataCleanup.cleanupUnusedSkills(tx, previousSkillIds);
       }
 
-      const course = await tx.course.findUniqueOrThrow({
-        where: {
-          id: courseId,
-        },
-        select: courseSelect,
-      });
-
-      return mapCourse(course);
+      return mapCourse(
+        await tx.course.findUniqueOrThrow({
+          where: { id: courseId },
+          select: courseSelect,
+        }),
+      );
     });
   }
 
   async remove(id: number, userId: number) {
     await this.findOne(id, userId);
 
-    await this.prisma.course.delete({
-      where: { id },
+    await this.prisma.$transaction(async (tx) => {
+      const [nodeTags, nodeSkills] = await Promise.all([
+        tx.nodeTag.findMany({
+          where: { node: { is: { courseId: id } } },
+          select: { tagId: true },
+        }),
+        tx.nodeSkill.findMany({
+          where: { node: { is: { courseId: id } } },
+          select: { skillId: true },
+        }),
+      ]);
+
+      await tx.course.delete({ where: { id } });
+
+      const tagIds = nodeTags.map(({ tagId }) => tagId);
+      const skillIds = nodeSkills.map(({ skillId }) => skillId);
+      await Promise.all([
+        ...(tagIds.length > 0
+          ? [this.metadataCleanup.cleanupUnusedTags(tx, tagIds)]
+          : []),
+        ...(skillIds.length > 0
+          ? [this.metadataCleanup.cleanupUnusedSkills(tx, skillIds)]
+          : []),
+      ]);
     });
 
     return true;

@@ -77,11 +77,11 @@ export function NotificationSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bell className="size-5" />
-          Уведомления
+          Notifications
         </CardTitle>
 
         <CardDescription>
-          Получайте напоминания о предстоящих событиях SkillTrack.
+          Get reminders about upcoming SkillTrack events.
         </CardDescription>
       </CardHeader>
 
@@ -93,10 +93,10 @@ export function NotificationSettings() {
             </div>
 
             <div className="flex-1">
-              <p className="text-sm font-medium">Уведомления включены</p>
+              <p className="text-sm font-medium">Notifications enabled</p>
 
               <p className="text-xs text-muted-foreground">
-                Вы будете получать напоминания о событиях.
+                You will receive reminders about events.
               </p>
             </div>
 
@@ -106,13 +106,13 @@ export function NotificationSettings() {
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="animate-spin" />}
-              Выключить
+              Disable
             </Button>
           </div>
         ) : (
           <Button onClick={handleEnable} disabled={isLoading}>
             {isLoading ? <Loader2 className="animate-spin" /> : <Bell />}
-            Включить уведомления
+            Enable Notifications
           </Button>
         )}
       </CardContent>

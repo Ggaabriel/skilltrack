@@ -111,8 +111,7 @@ export class CourseResolver {
   @Mutation(() => CourseResponse)
   async updateCourseSkills(
     @Args('id', { type: () => ID }, ParseIntPipe) id: number,
-    @Args('skillIds', { type: () => [Int] })
-    skillIds: number[],
+    @Args('skillIds', { type: () => [Int] }) skillIds: number[],
     @CurrentUser() { userId }: JwtPayload,
   ) {
     return graphqlSuccess(

@@ -1,19 +1,19 @@
-import type { CourseTag } from "@/entities/course/api/types";
-import type { Tag } from "@/entities/tag/api/tag.api";
+import type { CourseSkill, CourseTag } from "@/entities/course/api/types";
 import type { Skill } from "@/entities/skill/api/skill.api";
-import { CourseTagsEditor } from "@/features/course/edit-course-tags";
-import { CourseSkillsEditor } from "@/features/course/edit-course-skills/ui/course-skill-editor";
+import type { Tag } from "@/entities/tag/api/tag.api";
+import { CourseMetadataEditor } from "./course-metadata-editor";
 
 type CoursePropertiesPanelProps = {
   courseId: string;
   createdAt: string | Date;
   updatedAt: string | Date;
   courseTags: CourseTag[];
-  courseSkills: Pick<Skill, "id" | "name">[];
+  courseSkills: CourseSkill[];
   availableTags: Tag[];
   availableSkills: Skill[];
   isTagsLoading: boolean;
   isSkillsLoading: boolean;
+  hasNodes: boolean;
 };
 
 function formatDate(value: string | Date) {
@@ -30,16 +30,8 @@ export function CoursePropertiesPanel({
   availableSkills,
   isTagsLoading,
   isSkillsLoading,
+  hasNodes,
 }: CoursePropertiesPanelProps) {
-  const tagKey = courseTags
-    .map((tag) => tag.id)
-    .sort((a, b) => a - b)
-    .join(",");
-  const skillKey = courseSkills
-    .map((skill) => skill.id)
-    .sort((a, b) => a - b)
-    .join(",");
-
   return (
     <aside className="space-y-5 p-4 text-sm">
       <div>
@@ -49,20 +41,22 @@ export function CoursePropertiesPanel({
         </p>
       </div>
 
-      <CourseTagsEditor
-        key={`${courseId}:${tagKey}`}
+      <CourseMetadataEditor
+        key={`${courseId}:${courseTags
+          .map(({ id }) => id)
+          .sort()
+          .join(",")}:${courseSkills
+          .map(({ id }) => id)
+          .sort()
+          .join(",")}`}
         courseId={courseId}
         tags={courseTags}
-        availableTags={availableTags}
-        isLoading={isTagsLoading}
-      />
-
-      <CourseSkillsEditor
-        key={`${courseId}:${skillKey}`}
-        courseId={courseId}
         skills={courseSkills}
+        availableTags={availableTags}
         availableSkills={availableSkills}
-        isLoading={isSkillsLoading}
+        isTagsLoading={isTagsLoading}
+        isSkillsLoading={isSkillsLoading}
+        disabled={!hasNodes}
       />
 
       <div>

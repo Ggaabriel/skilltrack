@@ -2,6 +2,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
+import { MetadataCleanupService } from '../../metadata-cleanup/metadata-cleanup.service';
 import { UserService } from '../../user/user.service';
 import { SessionService } from '../../session/session.service';
 import { TokenService } from '../../token/token.service';
@@ -37,6 +38,7 @@ describe('AuthService Integration Tests', () => {
       imports: [JwtModule.register({})],
       providers: [
         PrismaService,
+        MetadataCleanupService,
         UserService,
         SessionService,
         TokenService,

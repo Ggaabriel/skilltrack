@@ -5,9 +5,16 @@ export type CourseNode = {
   position: number;
   courseId: string;
   parentId: number | null;
+  tags: NodeMetadata[];
+  skills: NodeMetadata[];
   children: CourseNode[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type NodeMetadata = {
+  id: number;
+  name: string;
 };
 
 export type CreateNodeInput = {

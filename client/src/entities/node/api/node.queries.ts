@@ -51,6 +51,24 @@ export function useUpdateNodeMutation(courseId: number) {
   });
 }
 
+export function useUpdateNodeTagsMutation(courseId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, tagIds }: { id: string; tagIds: number[] }) =>
+      nodeApi.updateNodeTags(id, tagIds),
+    onSuccess: () => invalidateCourseMetadata(queryClient, courseId),
+  });
+}
+
+export function useUpdateNodeSkillsMutation(courseId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, skillIds }: { id: string; skillIds: number[] }) =>
+      nodeApi.updateNodeSkills(id, skillIds),
+    onSuccess: () => invalidateCourseMetadata(queryClient, courseId),
+  });
+}
+
 export function useMoveNodeMutation(courseId: number) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -64,6 +82,22 @@ export function useDeleteNodeMutation(courseId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: nodeApi.deleteNode,
-    onSuccess: () => invalidateCourseContent(queryClient, courseId),
+    onSuccess: () => invalidateCourseMetadata(queryClient, courseId),
   });
+}
+
+function invalidateCourseMetadata(
+  queryClient: ReturnType<typeof useQueryClient>,
+  courseId: number,
+) {
+  return Promise.all([
+    invalidateCourseContent(queryClient, courseId),
+    queryClient.invalidateQueries({
+      queryKey: courseQueryKeys.detail(String(courseId)),
+    }),
+    queryClient.invalidateQueries({ queryKey: courseQueryKeys.list() }),
+    queryClient.invalidateQueries({
+      queryKey: courseQueryKeys.publishedList(),
+    }),
+  ]);
 }

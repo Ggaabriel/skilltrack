@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { MetadataCleanupService } from '../metadata-cleanup/metadata-cleanup.service';
 
 import { CreateSkillInput } from './dto/create-skill.input';
 import { UpdateSkillInput } from './dto/update-skill.input';
@@ -14,7 +19,10 @@ const skillSelect = {
 
 @Injectable()
 export class SkillService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly metadataCleanup: MetadataCleanupService,
+  ) {}
 
   findAll() {
     return this.prisma.skill.findMany({
@@ -58,10 +66,20 @@ export class SkillService {
   }
 
   async remove(id: number) {
-    await this.findOne(id);
+    await this.prisma.$transaction(async (tx) => {
+      const skill = await tx.skill.findUnique({
+        where: { id },
+        select: { id: true },
+      });
 
-    await this.prisma.skill.delete({
-      where: { id },
+      if (!skill) {
+        throw new NotFoundException('Skill not found');
+      }
+
+      const result = await this.metadataCleanup.cleanupUnusedSkills(tx, [id]);
+      if (result.count === 0) {
+        throw new ConflictException('Skill is still in use');
+      }
     });
 
     return true;

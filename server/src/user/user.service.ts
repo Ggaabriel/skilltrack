@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { MetadataCleanupService } from '../metadata-cleanup/metadata-cleanup.service';
 import * as bcrypt from 'bcrypt';
 const select = { id: true, email: true, name: true, picturePath: true };
 
@@ -9,7 +10,10 @@ const select = { id: true, email: true, name: true, picturePath: true };
 export class UserService {
   private readonly logger = new Logger(UserService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly metadataCleanup: MetadataCleanupService,
+  ) {}
 
   async hashPassword(password: string): Promise<string> {
     const saltRounds = 10;
@@ -120,7 +124,34 @@ export class UserService {
 
   async remove(id: number) {
     this.logger.log('Removing user', { userId: id });
-    const user = await this.prisma.user.delete({ where: { id }, select });
+
+    const user = await this.prisma.$transaction(async (tx) => {
+      const [nodeTags, nodeSkills] = await Promise.all([
+        tx.nodeTag.findMany({
+          where: { node: { course: { is: { userId: id } } } },
+          select: { tagId: true },
+        }),
+        tx.nodeSkill.findMany({
+          where: { node: { course: { is: { userId: id } } } },
+          select: { skillId: true },
+        }),
+      ]);
+      const removedUser = await tx.user.delete({ where: { id }, select });
+
+      const tagIds = nodeTags.map(({ tagId }) => tagId);
+      const skillIds = nodeSkills.map(({ skillId }) => skillId);
+      await Promise.all([
+        ...(tagIds.length > 0
+          ? [this.metadataCleanup.cleanupUnusedTags(tx, tagIds)]
+          : []),
+        ...(skillIds.length > 0
+          ? [this.metadataCleanup.cleanupUnusedSkills(tx, skillIds)]
+          : []),
+      ]);
+
+      return removedUser;
+    });
+
     this.logger.log('User removed from database', { userId: id });
 
     return user;

@@ -1,6 +1,6 @@
 import { LoaderCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { useCourseQuery } from "@/entities/course/api/course.queries";
 import { useUpdateCourseMutation } from "@/entities/course/api/course.mutations";
@@ -12,6 +12,8 @@ import {
   useMoveNodeMutation,
   useNodesQuery,
   useUpdateNodeMutation,
+  useUpdateNodeSkillsMutation,
+  useUpdateNodeTagsMutation,
   type CourseNode,
 } from "@/entities/node";
 import { useSkillsQuery } from "@/entities/skill/api/skill.queries";
@@ -27,6 +29,7 @@ import { Routes } from "@/shared/routing/routes";
 export function CourseBuilderPage() {
   const { courseId = "" } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const numericCourseId = Number(courseId);
   const validCourseId =
@@ -40,6 +43,10 @@ export function CourseBuilderPage() {
   const createNode = useCreateNodeMutation(numericCourseId);
   const moveNode = useMoveNodeMutation(numericCourseId);
   const updateNode = useUpdateNodeMutation(numericCourseId);
+  const updateNodeTags = useUpdateNodeTagsMutation(numericCourseId);
+  const updateNodeSkills = useUpdateNodeSkillsMutation(numericCourseId);
+  const { mutateAsync: updateNodeTagsAsync } = updateNodeTags;
+  const { mutateAsync: updateNodeSkillsAsync } = updateNodeSkills;
   const deleteNode = useDeleteNodeMutation(numericCourseId);
 
   const { data: tags = [], isLoading: isTagsLoading } = useTagsQuery();
@@ -51,6 +58,59 @@ export function CourseBuilderPage() {
   const [content, setContent] = useState("");
   const [isCourseDetailsOpen, setIsCourseDetailsOpen] = useState(false);
   const quickNoteCreationAttemptedFor = useRef<string | null>(null);
+  const initialMetadata = useRef<{
+    tagIds: number[];
+    skillIds: number[];
+  } | null>(null);
+
+  useEffect(() => {
+    const state = location.state as {
+      initialTagIds?: unknown;
+      initialSkillIds?: unknown;
+    } | null;
+    initialMetadata.current = {
+      tagIds: Array.isArray(state?.initialTagIds)
+        ? state.initialTagIds.map(Number).filter(Number.isSafeInteger)
+        : [],
+      skillIds: Array.isArray(state?.initialSkillIds)
+        ? state.initialSkillIds.map(Number).filter(Number.isSafeInteger)
+        : [],
+    };
+  }, [location.key, location.state]);
+
+  const applyInitialMetadata = useCallback(async (node: CourseNode) => {
+    const metadata = initialMetadata.current;
+    if (
+      !metadata ||
+      (metadata.tagIds.length === 0 && metadata.skillIds.length === 0)
+    ) {
+      initialMetadata.current = null;
+      navigate(location.pathname, { replace: true, state: null });
+      return;
+    }
+
+    initialMetadata.current = null;
+    navigate(location.pathname, { replace: true, state: null });
+
+    await Promise.all([
+      ...(metadata.tagIds.length > 0
+        ? [updateNodeTagsAsync({ id: node.id, tagIds: metadata.tagIds })]
+        : []),
+      ...(metadata.skillIds.length > 0
+        ? [
+            updateNodeSkillsAsync({
+              id: node.id,
+              skillIds: metadata.skillIds,
+            }),
+          ]
+        : []),
+    ]);
+  }, [
+    location.pathname,
+    navigate,
+    updateNodeSkillsAsync,
+    updateNodeTagsAsync,
+  ]);
 
   const activeNode = useMemo(
     () =>
@@ -107,7 +167,15 @@ export function CourseBuilderPage() {
       {
         onSuccess: (node) => {
           selectNode(node);
-          toast.success("Node created");
+          void applyInitialMetadata(node)
+            .then(() => toast.success("Node created"))
+            .catch((error: unknown) =>
+              toast.error(
+                error instanceof Error
+                  ? error.message
+                  : "Failed to save metadata.",
+              ),
+            );
         },
         onError: (error) => toast.error(error.message),
       },
@@ -125,7 +193,15 @@ export function CourseBuilderPage() {
       {
         onSuccess: (node) => {
           selectNode(node);
-          toast.success("Note created");
+          void applyInitialMetadata(node)
+            .then(() => toast.success("Note created"))
+            .catch((error: unknown) =>
+              toast.error(
+                error instanceof Error
+                  ? error.message
+                  : "Failed to save metadata.",
+              ),
+            );
         },
         onError: (error) => toast.error(error.message),
       },
@@ -144,14 +220,28 @@ export function CourseBuilderPage() {
       {
         onSuccess: (node) => {
           selectNode(node);
-          toast.success("Note created");
+          void applyInitialMetadata(node)
+            .then(() => toast.success("Note created"))
+            .catch((error: unknown) =>
+              toast.error(
+                error instanceof Error
+                  ? error.message
+                  : "Failed to save metadata.",
+              ),
+            );
         },
         onError: (error) => {
           toast.error(error.message);
         },
       },
     );
-  }, [course.data?.title, courseId, createNode, selectNode]);
+  }, [
+    applyInitialMetadata,
+    course.data?.title,
+    courseId,
+    createNode,
+    selectNode,
+  ]);
 
   useEffect(() => {
     if (
@@ -386,6 +476,7 @@ export function CourseBuilderPage() {
           availableSkills={skills}
           isTagsLoading={isTagsLoading}
           isSkillsLoading={isSkillsLoading}
+          hasNodes={(nodes.data?.length ?? 0) > 0}
           isPublished={courseData.isPublished}
           isPublishing={publishCourse.isPending}
           onEdit={() => setIsCourseDetailsOpen(true)}
@@ -403,6 +494,10 @@ export function CourseBuilderPage() {
             activeNode ? (
               <NodeEditorPanel
                 node={activeNode}
+                availableTags={tags}
+                availableSkills={skills}
+                isTagsLoading={isTagsLoading}
+                isSkillsLoading={isSkillsLoading}
                 title={
                   activeNodeId === null ? (activeNode?.title ?? title) : title
                 }
@@ -484,6 +579,15 @@ export function CourseBuilderPage() {
 
               <NodeEditorPanel
                 node={activeNode}
+                availableTags={tags}
+                availableSkills={skills}
+                isTagsLoading={isTagsLoading}
+                isSkillsLoading={isSkillsLoading}
+                onCreateNode={() =>
+                  courseData.type === "FREE_FORM"
+                    ? addFreeFormNote()
+                    : addNode(null)
+                }
                 title={title}
                 content={content}
                 isSaving={updateNode.isPending}

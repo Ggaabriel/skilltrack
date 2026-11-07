@@ -1,7 +1,9 @@
 import { jest } from '@jest/globals';
+import { ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { MetadataCleanupService } from '../metadata-cleanup/metadata-cleanup.service';
 import { SkillService } from './skill.service';
 
 describe('SkillService', () => {
@@ -20,8 +22,11 @@ describe('SkillService', () => {
       findUnique: jest.fn<(...args: any[]) => Promise<unknown>>(),
       create: jest.fn<(...args: any[]) => Promise<unknown>>(),
       update: jest.fn<(...args: any[]) => Promise<unknown>>(),
-      delete: jest.fn<(...args: any[]) => Promise<unknown>>(),
     },
+    $transaction: jest.fn(),
+  };
+  const metadataCleanup = {
+    cleanupUnusedSkills: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -31,7 +36,11 @@ describe('SkillService', () => {
     prisma.skill.findUnique.mockResolvedValue(skill);
     prisma.skill.create.mockResolvedValue(skill);
     prisma.skill.update.mockResolvedValue(skill);
-    prisma.skill.delete.mockResolvedValue(skill);
+    prisma.$transaction.mockImplementation(
+      async (callback: (tx: typeof prisma) => Promise<unknown>) =>
+        callback(prisma),
+    );
+    metadataCleanup.cleanupUnusedSkills.mockResolvedValue({ count: 1 });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -39,6 +48,10 @@ describe('SkillService', () => {
         {
           provide: PrismaService,
           useValue: prisma,
+        },
+        {
+          provide: MetadataCleanupService,
+          useValue: metadataCleanup,
         },
       ],
     }).compile();
@@ -139,21 +152,18 @@ describe('SkillService', () => {
     await service.remove(1);
 
     expect(prisma.skill.findUnique).toHaveBeenCalledWith({
-      where: {
-        id: 1,
-      },
-      select: {
-        id: true,
-        name: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      where: { id: 1 },
+      select: { id: true },
     });
+    expect(metadataCleanup.cleanupUnusedSkills).toHaveBeenCalledWith(
+      prisma,
+      [1],
+    );
+  });
 
-    expect(prisma.skill.delete).toHaveBeenCalledWith({
-      where: {
-        id: 1,
-      },
-    });
+  it('does not delete a skill that is still in use', async () => {
+    metadataCleanup.cleanupUnusedSkills.mockResolvedValueOnce({ count: 0 });
+
+    await expect(service.remove(1)).rejects.toBeInstanceOf(ConflictException);
   });
 });

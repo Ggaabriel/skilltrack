@@ -5,30 +5,27 @@ import { graphqlClient } from "@/shared/api";
 import { courseQueryKeys } from "./course.queries";
 import { normalizeCourseRelations, type Course } from "./types";
 
-type UpdateCourseTagsResponse = {
-  updateCourseTags: {
-    ok: boolean;
-    status: number;
-    message: string;
-    data: Course;
-  };
-};
-
-type UpdateCourseSkillsResponse = {
-  updateCourseSkills: {
-    ok: boolean;
-    status: number;
-    message: string;
-    data: Course;
-  };
-};
-
 type DeleteCourseResponse = {
   deleteCourse: {
     ok: boolean;
     status: number;
     message: string;
     data: boolean;
+  };
+};
+
+type UpdateCourseMetadataResponse = {
+  updateCourseTags?: {
+    ok: boolean;
+    status: number;
+    message: string;
+    data: Course;
+  };
+  updateCourseSkills?: {
+    ok: boolean;
+    status: number;
+    message: string;
+    data: Course;
   };
 };
 
@@ -55,76 +52,6 @@ type PublishCourseResponse = {
   };
 };
 
-const UPDATE_COURSE_TAGS_MUTATION = `
-  mutation UpdateCourseTags(
-    $id: ID!
-    $tagIds: [Int!]!
-  ) {
-    updateCourseTags(
-      id: $id
-      tagIds: $tagIds
-    ) {
-      ok
-      status
-      message
-      data {
-        id
-        title
-        description
-        type
-        cover
-        isPublished
-        publishedAt
-        createdAt
-        updatedAt
-        tags {
-          id
-          name
-        }
-        skills {
-          id
-          name
-        }
-      }
-    }
-  }
-`;
-
-const UPDATE_COURSE_SKILLS_MUTATION = `
-  mutation UpdateCourseSkills(
-    $id: ID!
-    $skillIds: [Int!]!
-  ) {
-    updateCourseSkills(
-      id: $id
-      skillIds: $skillIds
-    ) {
-      ok
-      status
-      message
-      data {
-        id
-        title
-        description
-        type
-        cover
-        isPublished
-        publishedAt
-        createdAt
-        updatedAt
-        tags {
-          id
-          name
-        }
-        skills {
-          id
-          name
-        }
-      }
-    }
-  }
-`;
-
 const DELETE_COURSE_MUTATION = `
   mutation DeleteCourse($id: ID!) {
     deleteCourse(id: $id) {
@@ -132,6 +59,36 @@ const DELETE_COURSE_MUTATION = `
       status
       message
       data
+    }
+  }
+`;
+
+const UPDATE_COURSE_TAGS_MUTATION = `
+  mutation UpdateCourseTags($id: ID!, $tagIds: [Int!]!) {
+    updateCourseTags(id: $id, tagIds: $tagIds) {
+      ok
+      status
+      message
+      data {
+        id title description type cover isPublished publishedAt createdAt updatedAt
+        tags { id name }
+        skills { id name }
+      }
+    }
+  }
+`;
+
+const UPDATE_COURSE_SKILLS_MUTATION = `
+  mutation UpdateCourseSkills($id: ID!, $skillIds: [Int!]!) {
+    updateCourseSkills(id: $id, skillIds: $skillIds) {
+      ok
+      status
+      message
+      data {
+        id title description type cover isPublished publishedAt createdAt updatedAt
+        tags { id name }
+        skills { id name }
+      }
     }
   }
 `;
@@ -194,43 +151,6 @@ const PUBLISH_COURSE_MUTATION = `
   }
 `;
 
-async function updateCourseTags(id: string, tagIds: number[]): Promise<Course> {
-  const response = await graphqlClient.request<UpdateCourseTagsResponse>(
-    UPDATE_COURSE_TAGS_MUTATION,
-    {
-      id,
-      tagIds: toIntegerIds(tagIds),
-    },
-  );
-
-  return normalizeCourseRelations(response.updateCourseTags.data);
-}
-
-async function updateCourseSkills(
-  id: string,
-  skillIds: number[],
-): Promise<Course> {
-  const response = await graphqlClient.request<UpdateCourseSkillsResponse>(
-    UPDATE_COURSE_SKILLS_MUTATION,
-    {
-      id,
-      skillIds: toIntegerIds(skillIds),
-    },
-  );
-
-  return normalizeCourseRelations(response.updateCourseSkills.data);
-}
-
-function toIntegerIds(ids: number[]): number[] {
-  const normalizedIds = ids.map(Number);
-
-  if (!normalizedIds.every(Number.isSafeInteger)) {
-    throw new Error("Tag and skill identifiers must be integers.");
-  }
-
-  return [...new Set(normalizedIds)];
-}
-
 function refreshCourseQueries(
   queryClient: ReturnType<typeof useQueryClient>,
   course: Course,
@@ -263,24 +183,53 @@ async function deleteCourse(id: string): Promise<string> {
   return id;
 }
 
+function normalizeIds(ids: number[]): number[] {
+  const normalizedIds = ids.map(Number);
+  if (!normalizedIds.every(Number.isSafeInteger)) {
+    throw new Error("Tag and skill identifiers must be integers.");
+  }
+  return [...new Set(normalizedIds)];
+}
+
+async function updateCourseMetadata(
+  kind: "tags" | "skills",
+  id: string,
+  ids: number[],
+): Promise<Course> {
+  const mutation =
+    kind === "tags"
+      ? UPDATE_COURSE_TAGS_MUTATION
+      : UPDATE_COURSE_SKILLS_MUTATION;
+  const response = await graphqlClient.request<UpdateCourseMetadataResponse>(
+    mutation,
+    kind === "tags"
+      ? { id, tagIds: normalizeIds(ids) }
+      : { id, skillIds: normalizeIds(ids) },
+  );
+  const result =
+    kind === "tags" ? response.updateCourseTags : response.updateCourseSkills;
+
+  if (!result?.ok) {
+    throw new Error(result?.message || `Failed to update course ${kind}.`);
+  }
+
+  return normalizeCourseRelations(result.data);
+}
+
 export function useUpdateCourseTagsMutation() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ id, tagIds }: { id: string; tagIds: number[] }) =>
-      updateCourseTags(id, tagIds),
-
+      updateCourseMetadata("tags", id, tagIds),
     onSuccess: (course) => refreshCourseQueries(queryClient, course),
   });
 }
 
 export function useUpdateCourseSkillsMutation() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ id, skillIds }: { id: string; skillIds: number[] }) =>
-      updateCourseSkills(id, skillIds),
-
+      updateCourseMetadata("skills", id, skillIds),
     onSuccess: (course) => refreshCourseQueries(queryClient, course),
   });
 }

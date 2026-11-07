@@ -79,7 +79,7 @@ model PushSubscription {
 }
 
 model Course {
-  id          Int     @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   description String?
   type        String
@@ -92,53 +92,28 @@ model Course {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  nodes  Node[]
-  tags   CourseTag[]
-  skills CourseSkill[]
-  medias Media[]
+  nodes     Node[]
+  medias    Media[]
 
   @@index([userId])
 }
 
 model Tag {
-  id      Int         @id @default(autoincrement())
-  name    String      @unique
-  courses CourseTag[]
+  id    Int       @id @default(autoincrement())
+  name  String    @unique
+  nodes NodeTag[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-model CourseTag {
-  courseId Int
-  tagId    Int
-
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@id([courseId, tagId])
-  @@index([tagId])
 }
 
 model Skill {
-  id      Int           @id @default(autoincrement())
-  name    String        @unique
-  courses CourseSkill[]
+  id    Int         @id @default(autoincrement())
+  name  String      @unique
+  nodes NodeSkill[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-model CourseSkill {
-  courseId Int
-  skillId  Int
-
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  skill  Skill  @relation(fields: [skillId], references: [id], onDelete: Cascade)
-
-  @@id([courseId, skillId])
-  @@index([skillId])
 }
 
 model Media {
@@ -168,11 +143,35 @@ model Node {
   parent   Node?          @relation("NodeTree", fields: [parentId], references: [id], onDelete: SetNull)
   children Node[]         @relation("NodeTree")
   progress NodeProgress[]
+  tags     NodeTag[]
+  skills   NodeSkill[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([courseId, parentId])
+}
+
+model NodeTag {
+  nodeId Int
+  tagId  Int
+
+  node Node @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([nodeId, tagId])
+  @@index([tagId])
+}
+
+model NodeSkill {
+  nodeId  Int
+  skillId Int
+
+  node  Node  @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([nodeId, skillId])
+  @@index([skillId])
 }
 
 model NodeProgress {

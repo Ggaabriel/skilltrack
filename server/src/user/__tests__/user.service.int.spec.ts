@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { UserService } from '../user.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
+import { MetadataCleanupService } from '../../metadata-cleanup/metadata-cleanup.service';
 
 describe('UserService Integration Tests', () => {
   let module: TestingModule;
@@ -13,7 +14,7 @@ describe('UserService Integration Tests', () => {
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
-      providers: [PrismaService, UserService],
+      providers: [PrismaService, MetadataCleanupService, UserService],
     }).compile();
 
     prisma = module.get(PrismaService);

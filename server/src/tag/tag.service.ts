@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { MetadataCleanupService } from '../metadata-cleanup/metadata-cleanup.service';
 
 import { CreateTagInput } from './dto/create-tag.input';
 import { UpdateTagInput } from './dto/update-tag.input';
@@ -14,7 +19,10 @@ const tagSelect = {
 
 @Injectable()
 export class TagService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly metadataCleanup: MetadataCleanupService,
+  ) {}
 
   findAll() {
     return this.prisma.tag.findMany({
@@ -58,10 +66,20 @@ export class TagService {
   }
 
   async remove(id: number) {
-    await this.findOne(id);
+    await this.prisma.$transaction(async (tx) => {
+      const tag = await tx.tag.findUnique({
+        where: { id },
+        select: { id: true },
+      });
 
-    await this.prisma.tag.delete({
-      where: { id },
+      if (!tag) {
+        throw new NotFoundException('Tag not found');
+      }
+
+      const result = await this.metadataCleanup.cleanupUnusedTags(tx, [id]);
+      if (result.count === 0) {
+        throw new ConflictException('Tag is still in use');
+      }
     });
 
     return true;

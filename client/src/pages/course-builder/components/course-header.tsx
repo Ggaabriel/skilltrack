@@ -2,12 +2,11 @@ import { CheckCircle2, Eye, LoaderCircle, Pencil } from "lucide-react";
 import { Link } from "react-router";
 
 import { Button } from "@/components/ui/button";
-import type { CourseTag } from "@/entities/course/api/types";
-import type { Tag } from "@/entities/tag/api/tag.api";
+import type { CourseSkill, CourseTag } from "@/entities/course/api/types";
 import type { Skill } from "@/entities/skill/api/skill.api";
-import { CourseTagsEditor } from "@/features/course/edit-course-tags";
-import { CourseSkillsEditor } from "@/features/course/edit-course-skills";
+import type { Tag } from "@/entities/tag/api/tag.api";
 import { Routes } from "@/shared/routing/routes";
+import { CourseMetadataEditor } from "./course-metadata-editor";
 
 type CourseHeaderProps = {
   courseId: string;
@@ -17,11 +16,12 @@ type CourseHeaderProps = {
   createdAt: string | Date;
   updatedAt: string | Date;
   courseTags: CourseTag[];
-  courseSkills: Pick<Skill, "id" | "name">[];
+  courseSkills: CourseSkill[];
   availableTags: Tag[];
   availableSkills: Skill[];
   isTagsLoading: boolean;
   isSkillsLoading: boolean;
+  hasNodes: boolean;
   isPublished: boolean;
   isPublishing: boolean;
   onEdit: () => void;
@@ -45,21 +45,12 @@ export function CourseHeader({
   availableSkills,
   isTagsLoading,
   isSkillsLoading,
+  hasNodes,
   isPublished,
   isPublishing,
   onEdit,
   onPublish,
 }: CourseHeaderProps) {
-  const tagKey = courseTags
-    .map((tag) => tag.id)
-    .sort((a, b) => a - b)
-    .join(",");
-
-  const skillKey = courseSkills
-    .map((skill) => skill.id)
-    .sort((a, b) => a - b)
-    .join(",");
-
   return (
     <header className="grid gap-4 border-b pb-4 xl:grid-cols-[minmax(0,1fr)_minmax(420px,560px)]">
       <div className="min-w-0">
@@ -119,29 +110,23 @@ export function CourseHeader({
         </div>
       </div>
 
-      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="min-w-0">
-          <CourseTagsEditor
-            layout="horizontal"
-            key={`${courseId}:${tagKey}`}
-            courseId={courseId}
-            tags={courseTags}
-            availableTags={availableTags}
-            isLoading={isTagsLoading}
-          />
-        </div>
-
-        <div className="min-w-0">
-          <CourseSkillsEditor
-            layout="horizontal"
-            key={`${courseId}:${skillKey}`}
-            courseId={courseId}
-            skills={courseSkills}
-            availableSkills={availableSkills}
-            isLoading={isSkillsLoading}
-          />
-        </div>
-      </div>
+      <CourseMetadataEditor
+        key={`${courseId}:${courseTags
+          .map(({ id }) => id)
+          .sort()
+          .join(",")}:${courseSkills
+          .map(({ id }) => id)
+          .sort()
+          .join(",")}`}
+        courseId={courseId}
+        tags={courseTags}
+        skills={courseSkills}
+        availableTags={availableTags}
+        availableSkills={availableSkills}
+        isTagsLoading={isTagsLoading}
+        isSkillsLoading={isSkillsLoading}
+        disabled={!hasNodes}
+      />
     </header>
   );
 }

@@ -1,11 +1,19 @@
-import { FilePlus2 } from "lucide-react";
+import { FilePlus2, Plus } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import type { CourseNode } from "@/entities/node";
+import type { Skill } from "@/entities/skill/api/skill.api";
+import type { Tag } from "@/entities/tag/api/tag.api";
 
 import { NodeEditor } from "./node-editor";
 
 type NodeEditorPanelProps = {
   node: CourseNode | null;
+  availableTags: Tag[];
+  availableSkills: Skill[];
+  isTagsLoading: boolean;
+  isSkillsLoading: boolean;
+  onCreateNode?: () => void;
   title: string;
   content: string;
   isSaving: boolean;
@@ -20,6 +28,11 @@ type NodeEditorPanelProps = {
 
 export function NodeEditorPanel({
   node,
+  availableTags,
+  availableSkills,
+  isTagsLoading,
+  isSkillsLoading,
+  onCreateNode,
   title,
   content,
   isSaving,
@@ -37,6 +50,10 @@ export function NodeEditorPanel({
         <NodeEditor
           key={node.id}
           node={node}
+          availableTags={availableTags}
+          availableSkills={availableSkills}
+          isTagsLoading={isTagsLoading}
+          isSkillsLoading={isSkillsLoading}
           title={title}
           content={content}
           onTitleChange={onTitleChange}
@@ -54,9 +71,16 @@ export function NodeEditorPanel({
           <div>
             <h2 className="font-medium">Select a node to edit</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Choose a node in the tree or create a new one.
+              Tags and skills are managed on each node. Select a node or create
+              one to add them.
             </p>
           </div>
+          {onCreateNode && (
+            <Button type="button" variant="outline" onClick={onCreateNode}>
+              <Plus />
+              Create node
+            </Button>
+          )}
         </div>
       )}
     </section>

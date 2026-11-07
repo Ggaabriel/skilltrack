@@ -131,13 +131,18 @@ const PUBLISHED_COURSES_QUERY = `
 `;
 
 const NODE_FIELDS = `
-  id title content position courseId parentId createdAt updatedAt
+  id title content position courseId parentId
+  tags { id name }
+  skills { id name }
+  createdAt updatedAt
 `;
 
 function buildNodeTree(nodes: CourseNode[]): CourseNode[] {
   const treeNodes: CourseNode[] = nodes.map((node) => ({
     ...node,
     parentId: node.parentId == null ? null : Number(node.parentId),
+    tags: node.tags.map((tag) => ({ ...tag, id: Number(tag.id) })),
+    skills: node.skills.map((skill) => ({ ...skill, id: Number(skill.id) })),
     children: [],
   }));
   const nodesById = new Map(treeNodes.map((node) => [node.id, node]));

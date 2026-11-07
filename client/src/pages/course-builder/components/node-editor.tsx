@@ -1,4 +1,3 @@
-
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "@tiptap/markdown";
@@ -25,9 +24,16 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CourseNode } from "@/entities/node";
+import type { Skill } from "@/entities/skill/api/skill.api";
+import type { Tag } from "@/entities/tag/api/tag.api";
+import { NodeMetadataEditor } from "./node-metadata-editor";
 
 type NodeEditorProps = {
   node: CourseNode;
+  availableTags: Tag[];
+  availableSkills: Skill[];
+  isTagsLoading: boolean;
+  isSkillsLoading: boolean;
   title: string;
   content: string;
   onTitleChange: (value: string) => void;
@@ -75,6 +81,10 @@ function ToolbarButton({
 
 export function NodeEditor({
   node,
+  availableTags,
+  availableSkills,
+  isTagsLoading,
+  isSkillsLoading,
   title,
   content,
   onTitleChange,
@@ -146,9 +156,7 @@ export function NodeEditor({
       return;
     }
 
-    const normalizedUrl = /^https?:\/\//i.test(url)
-      ? url
-      : `https://${url}`;
+    const normalizedUrl = /^https?:\/\//i.test(url) ? url : `https://${url}`;
 
     editor
       .chain()
@@ -173,11 +181,7 @@ export function NodeEditor({
           onClick={handleSave}
           disabled={!title.trim() || !changed || isSaving}
         >
-          {isSaving ? (
-            <LoaderCircle className="animate-spin" />
-          ) : (
-            <Save />
-          )}
+          {isSaving ? <LoaderCircle className="animate-spin" /> : <Save />}
           Сохранить
         </Button>
 
@@ -195,6 +199,21 @@ export function NodeEditor({
           </Button>
         )}
       </div>
+
+      <NodeMetadataEditor
+        key={`${node.id}:${node.tags
+          .map((tag) => tag.id)
+          .sort()
+          .join(",")}:${node.skills
+          .map((skill) => skill.id)
+          .sort()
+          .join(",")}`}
+        node={node}
+        availableTags={availableTags}
+        availableSkills={availableSkills}
+        isTagsLoading={isTagsLoading}
+        isSkillsLoading={isSkillsLoading}
+      />
 
       {editor && (
         <div className="mb-3 flex flex-wrap items-center gap-1 rounded-md border p-1">
@@ -296,9 +315,7 @@ export function NodeEditor({
 
           <ToolbarButton
             label="Горизонтальная линия"
-            onClick={() =>
-              editor.chain().focus().setHorizontalRule().run()
-            }
+            onClick={() => editor.chain().focus().setHorizontalRule().run()}
           >
             <Minus className="size-4" />
           </ToolbarButton>
@@ -328,7 +345,7 @@ export function NodeEditor({
       </div>
 
       <p className="mt-2 text-xs text-muted-foreground">
-        Выдели текст или поставь курсор и используй кнопки форматирования.
+        Highlight text or place the cursor and use the formatting buttons.
       </p>
     </div>
   );

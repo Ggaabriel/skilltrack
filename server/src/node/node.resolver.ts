@@ -69,6 +69,28 @@ export class NodeResolver {
   }
 
   @Mutation(() => NodeResponse)
+  async updateNodeTags(
+    @Args('id', { type: () => ID }, ParseIntPipe) id: number,
+    @Args('tagIds', { type: () => [Int] }) tagIds: number[],
+    @CurrentUser() { userId }: JwtPayload,
+  ) {
+    return graphqlSuccess(
+      await this.nodeService.updateTags(id, userId, tagIds),
+    );
+  }
+
+  @Mutation(() => NodeResponse)
+  async updateNodeSkills(
+    @Args('id', { type: () => ID }, ParseIntPipe) id: number,
+    @Args('skillIds', { type: () => [Int] }) skillIds: number[],
+    @CurrentUser() { userId }: JwtPayload,
+  ) {
+    return graphqlSuccess(
+      await this.nodeService.updateSkills(id, userId, skillIds),
+    );
+  }
+
+  @Mutation(() => NodeResponse)
   async moveNode(
     @Args('id', { type: () => ID }, ParseIntPipe) id: number,
     @Args('input', { type: () => MoveNodeInput }) input: MoveNodeInput,

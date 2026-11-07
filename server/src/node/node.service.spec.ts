@@ -2,6 +2,7 @@ import { jest } from '@jest/globals';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service';
+import { MetadataCleanupService } from '../metadata-cleanup/metadata-cleanup.service';
 import { NodeService } from './node.service';
 
 type NodeFixture = {
@@ -11,6 +12,12 @@ type NodeFixture = {
   position: number;
   courseId: number;
   parentId: number | null;
+  tags: {
+    tag: { id: number; name: string; createdAt: Date; updatedAt: Date };
+  }[];
+  skills: {
+    skill: { id: number; name: string; createdAt: Date; updatedAt: Date };
+  }[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -22,6 +29,8 @@ const nodeFixture = (overrides: Partial<NodeFixture> = {}): NodeFixture => ({
   position: 0,
   courseId: 7,
   parentId: null,
+  tags: [],
+  skills: [],
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
   ...overrides,
@@ -31,8 +40,26 @@ describe('NodeService', () => {
   let service: NodeService;
   const transaction = {
     node: {
+      findFirst: jest.fn<() => Promise<unknown>>(),
       findMany: jest.fn<() => Promise<{ id: number }[]>>(),
       update: jest.fn<() => Promise<unknown>>(),
+      delete: jest.fn<() => Promise<unknown>>(),
+    },
+    nodeTag: {
+      findMany: jest.fn<() => Promise<{ tagId: number }[]>>(),
+      deleteMany: jest.fn<() => Promise<unknown>>(),
+      createMany: jest.fn<() => Promise<unknown>>(),
+    },
+    nodeSkill: {
+      findMany: jest.fn<() => Promise<{ skillId: number }[]>>(),
+      deleteMany: jest.fn<() => Promise<unknown>>(),
+      createMany: jest.fn<() => Promise<unknown>>(),
+    },
+    tag: {
+      findMany: jest.fn<() => Promise<{ id: number }[]>>(),
+    },
+    skill: {
+      findMany: jest.fn<() => Promise<{ id: number }[]>>(),
     },
   };
   const prisma = {
@@ -52,12 +79,27 @@ describe('NodeService', () => {
       ): Promise<unknown> => callback(transaction),
     ),
   };
+  const metadataCleanup = {
+    cleanupUnusedTags: jest.fn(),
+    cleanupUnusedSkills: jest.fn(),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
     prisma.course.findFirst.mockResolvedValue({ id: 7, isPublished: false });
+    transaction.node.findFirst.mockResolvedValue({ tags: [], skills: [] });
+    transaction.nodeTag.findMany.mockResolvedValue([]);
+    transaction.nodeSkill.findMany.mockResolvedValue([]);
+    transaction.tag.findMany.mockResolvedValue([]);
+    transaction.skill.findMany.mockResolvedValue([]);
+    metadataCleanup.cleanupUnusedTags.mockResolvedValue({ count: 0 });
+    metadataCleanup.cleanupUnusedSkills.mockResolvedValue({ count: 0 });
     const module: TestingModule = await Test.createTestingModule({
-      providers: [NodeService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        NodeService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: MetadataCleanupService, useValue: metadataCleanup },
+      ],
     }).compile();
 
     service = module.get<NodeService>(NodeService);
@@ -233,6 +275,10 @@ describe('NodeService', () => {
     prisma.node.findFirst.mockResolvedValue({ id: 13, courseId: 7 });
     prisma.node.update.mockResolvedValue({ id: 13 });
     prisma.node.findMany.mockResolvedValue([nodeFixture({ id: 13 })]);
+    transaction.node.findFirst.mockResolvedValue({
+      tags: [{ tagId: 21 }],
+      skills: [{ skillId: 31 }],
+    });
 
     await service.findOne(13, 42);
     await service.update(13, 42, { title: 'Updated' });
@@ -248,9 +294,75 @@ describe('NodeService', () => {
         where: { id: 13, course: { is: { userId: 42 } } },
       }),
     );
-    expect(prisma.node.delete).toHaveBeenCalledWith({
+    expect(transaction.node.delete).toHaveBeenCalledWith({
       where: { id: 13, course: { is: { userId: 42 } } },
     });
+    expect(metadataCleanup.cleanupUnusedTags).toHaveBeenCalledWith(
+      transaction,
+      [21],
+    );
+    expect(metadataCleanup.cleanupUnusedSkills).toHaveBeenCalledWith(
+      transaction,
+      [31],
+    );
+  });
+
+  it('updates node tags and cleans up only detached tags', async () => {
+    transaction.node.findFirst.mockResolvedValue({ id: 13 });
+    transaction.tag.findMany.mockResolvedValue([{ id: 3 }]);
+    transaction.nodeTag.findMany.mockResolvedValue([{ tagId: 2 }]);
+    prisma.node.findFirst.mockResolvedValue({ courseId: 7 });
+    prisma.node.findMany.mockResolvedValue([nodeFixture({ id: 13 })]);
+
+    await service.updateTags(13, 42, [3, 3]);
+
+    expect(transaction.nodeTag.deleteMany).toHaveBeenCalledWith({
+      where: { nodeId: 13 },
+    });
+    expect(transaction.nodeTag.createMany).toHaveBeenCalledWith({
+      data: [{ nodeId: 13, tagId: 3 }],
+    });
+    expect(metadataCleanup.cleanupUnusedTags).toHaveBeenCalledWith(
+      transaction,
+      [2],
+    );
+  });
+
+  it('updates node skills and cleans up only detached skills', async () => {
+    transaction.node.findFirst.mockResolvedValue({ id: 13 });
+    transaction.skill.findMany.mockResolvedValue([{ id: 5 }]);
+    transaction.nodeSkill.findMany.mockResolvedValue([{ skillId: 4 }]);
+    prisma.node.findFirst.mockResolvedValue({ courseId: 7 });
+    prisma.node.findMany.mockResolvedValue([nodeFixture({ id: 13 })]);
+
+    await service.updateSkills(13, 42, [5]);
+
+    expect(transaction.nodeSkill.deleteMany).toHaveBeenCalledWith({
+      where: { nodeId: 13 },
+    });
+    expect(transaction.nodeSkill.createMany).toHaveBeenCalledWith({
+      data: [{ nodeId: 13, skillId: 5 }],
+    });
+    expect(metadataCleanup.cleanupUnusedSkills).toHaveBeenCalledWith(
+      transaction,
+      [4],
+    );
+  });
+
+  it('does not run cleanup when only adding node metadata', async () => {
+    transaction.node.findFirst.mockResolvedValue({ id: 13 });
+    transaction.tag.findMany.mockResolvedValue([{ id: 2 }, { id: 3 }]);
+    transaction.skill.findMany.mockResolvedValue([{ id: 4 }, { id: 5 }]);
+    transaction.nodeTag.findMany.mockResolvedValue([{ tagId: 2 }]);
+    transaction.nodeSkill.findMany.mockResolvedValue([{ skillId: 4 }]);
+    prisma.node.findFirst.mockResolvedValue({ courseId: 7 });
+    prisma.node.findMany.mockResolvedValue([nodeFixture({ id: 13 })]);
+
+    await service.updateTags(13, 42, [2, 3]);
+    await service.updateSkills(13, 42, [4, 5]);
+
+    expect(metadataCleanup.cleanupUnusedTags).not.toHaveBeenCalled();
+    expect(metadataCleanup.cleanupUnusedSkills).not.toHaveBeenCalled();
   });
 
   it('rejects updates that would create a parent cycle', async () => {

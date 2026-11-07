@@ -38,26 +38,23 @@ import {
   type CreateCourseFormValues,
 } from "../model/schemas";
 import { useCreateCourseMutation } from "../api/create-course.mutation";
-
 import { useTagsQuery } from "@/entities/tag/api/tag.queries";
 import { useSkillsQuery } from "@/entities/skill/api/skill.queries";
-
-import {
-  useUpdateCourseSkillsMutation,
-  useUpdateCourseTagsMutation,
-} from "@/entities/course/api/course.mutations";
-
 import { useCreateTagMutation } from "@/entities/tag/api/tag.mutations";
-
 import { useCreateSkillMutation } from "@/entities/skill/api/skill.mutations";
-
 import { CreatableMultiSelect } from "./creatable-multi-select";
 
 export function CreateCourseDialog() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+  const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([]);
 
   const createCourseMutation = useCreateCourseMutation();
+  const createTagMutation = useCreateTagMutation();
+  const createSkillMutation = useCreateSkillMutation();
+  const { data: tags = [], isLoading: isTagsLoading } = useTagsQuery();
+  const { data: skills = [], isLoading: isSkillsLoading } = useSkillsQuery();
 
   const form = useForm<CreateCourseFormValues>({
     resolver: zodResolver(createCourseSchema),
@@ -72,29 +69,17 @@ export function CreateCourseDialog() {
     try {
       const course = await createCourseMutation.mutateAsync(values);
 
-      await Promise.all([
-        updateCourseTagsMutation.mutateAsync({
-          id: course.id,
-          tagIds: selectedTagIds,
-        }),
-
-        updateCourseSkillsMutation.mutateAsync({
-          id: course.id,
-          skillIds: selectedSkillIds,
-        }),
-      ]);
-
       form.reset();
-      setSelectedTagIds([]);
-      setSelectedSkillIds([]);
-
       createCourseMutation.reset();
-      updateCourseTagsMutation.reset();
-      updateCourseSkillsMutation.reset();
 
       setOpen(false);
 
-      navigate(`${Routes.COURSES}/${course.id}/builder`);
+      navigate(`${Routes.COURSES}/${course.id}/builder`, {
+        state: {
+          initialTagIds: selectedTagIds,
+          initialSkillIds: selectedSkillIds,
+        },
+      });
     } catch {
       // Ошибка отображается ниже формы
     }
@@ -110,26 +95,15 @@ export function CreateCourseDialog() {
     if (!nextOpen) {
       form.reset();
       createCourseMutation.reset();
+      setSelectedTagIds([]);
+      setSelectedSkillIds([]);
     }
   }
 
-  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
-  const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([]);
-
-  const { data: tags = [], isLoading: isTagsLoading } = useTagsQuery();
-
-  const { data: skills = [], isLoading: isSkillsLoading } = useSkillsQuery();
-
-  const updateCourseTagsMutation = useUpdateCourseTagsMutation();
-  const updateCourseSkillsMutation = useUpdateCourseSkillsMutation();
-
   const isSubmitting =
     createCourseMutation.isPending ||
-    updateCourseTagsMutation.isPending ||
-    updateCourseSkillsMutation.isPending;
-
-  const createTagMutation = useCreateTagMutation();
-  const createSkillMutation = useCreateSkillMutation();
+    createTagMutation.isPending ||
+    createSkillMutation.isPending;
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
@@ -160,7 +134,7 @@ export function CreateCourseDialog() {
                   <FormControl>
                     <Input
                       placeholder="e.g. React fundamentals"
-                      disabled={createCourseMutation.isPending}
+                      disabled={isSubmitting}
                       {...field}
                     />
                   </FormControl>
@@ -182,7 +156,7 @@ export function CreateCourseDialog() {
                       placeholder="What is this course about?"
                       className="resize-none"
                       rows={4}
-                      disabled={createCourseMutation.isPending}
+                      disabled={isSubmitting}
                       {...field}
                     />
                   </FormControl>
@@ -202,7 +176,7 @@ export function CreateCourseDialog() {
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
-                    disabled={createCourseMutation.isPending}
+                    disabled={isSubmitting}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -225,7 +199,7 @@ export function CreateCourseDialog() {
             />
 
             <CreatableMultiSelect
-              label="Tags"
+              label="Tags for the first node"
               placeholder="Selected: 0"
               searchPlaceholder="Search or enter a tag..."
               createLabel="Create tag"
@@ -235,11 +209,11 @@ export function CreateCourseDialog() {
               onCreate={(name) => createTagMutation.mutateAsync(name)}
               isLoading={isTagsLoading}
               isCreating={createTagMutation.isPending}
-              disabled={createCourseMutation.isPending}
+              disabled={isSubmitting}
             />
 
             <CreatableMultiSelect
-              label="Skills"
+              label="Skills for the first node"
               placeholder="Selected: 0"
               searchPlaceholder="Search or enter a skill..."
               createLabel="Create skill"
@@ -249,16 +223,12 @@ export function CreateCourseDialog() {
               onCreate={(name) => createSkillMutation.mutateAsync(name)}
               isLoading={isSkillsLoading}
               isCreating={createSkillMutation.isPending}
-              disabled={createCourseMutation.isPending}
+              disabled={isSubmitting}
             />
 
-            {createCourseMutation.isError ||
-            updateCourseTagsMutation.isError ||
-            updateCourseSkillsMutation.isError ? (
+            {createCourseMutation.isError ? (
               <p className="text-sm text-destructive">
                 {createCourseMutation.error?.message ??
-                  updateCourseTagsMutation.error?.message ??
-                  updateCourseSkillsMutation.error?.message ??
                   "Failed to create course."}
               </p>
             ) : null}
@@ -267,13 +237,16 @@ export function CreateCourseDialog() {
               <Button
                 type="button"
                 variant="outline"
-                disabled={createCourseMutation.isPending}
+                disabled={isSubmitting}
                 onClick={() => setOpen(false)}
               >
                 Cancel
               </Button>
 
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting || isTagsLoading || isSkillsLoading}
+              >
                 {isSubmitting ? "Creating..." : "Create course"}
               </Button>
             </div>

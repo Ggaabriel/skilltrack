@@ -14,6 +14,8 @@ type NodesResponse = {
 type NodeResponse = {
   createNode?: { data: CourseNode };
   updateNode?: { data: CourseNode };
+  updateNodeTags?: { data: CourseNode };
+  updateNodeSkills?: { data: CourseNode };
   moveNode?: { data: CourseNode };
   deleteNode?: { data: boolean };
 };
@@ -25,6 +27,8 @@ const NODE_SCALAR_FIELDS = `
   position
   courseId
   parentId
+  tags { id name }
+  skills { id name }
   createdAt
   updatedAt
 `;
@@ -38,6 +42,15 @@ function nodeFields(depth: number): string {
 }
 
 const NODE_FIELDS = nodeFields(12);
+
+function normalizeNode(node: CourseNode): CourseNode {
+  return {
+    ...node,
+    tags: node.tags.map((tag) => ({ ...tag, id: Number(tag.id) })),
+    skills: node.skills.map((skill) => ({ ...skill, id: Number(skill.id) })),
+    children: (node.children ?? []).map(normalizeNode),
+  };
+}
 
 const NODES_QUERY = `
   query Nodes($courseId: Int!) {
@@ -59,6 +72,22 @@ const UPDATE_NODE_MUTATION = `
   }
 `;
 
+const UPDATE_NODE_TAGS_MUTATION = `
+  mutation UpdateNodeTags($id: ID!, $tagIds: [Int!]!) {
+    updateNodeTags(id: $id, tagIds: $tagIds) {
+      data { ${NODE_FIELDS} }
+    }
+  }
+`;
+
+const UPDATE_NODE_SKILLS_MUTATION = `
+  mutation UpdateNodeSkills($id: ID!, $skillIds: [Int!]!) {
+    updateNodeSkills(id: $id, skillIds: $skillIds) {
+      data { ${NODE_FIELDS} }
+    }
+  }
+`;
+
 const MOVE_NODE_MUTATION = `
   mutation MoveNode($id: ID!, $input: MoveNodeInput!) {
     moveNode(id: $id, input: $input) { data { ${NODE_FIELDS} } }
@@ -76,7 +105,7 @@ export const nodeApi = {
     const response = await graphqlClient.request<NodesResponse>(NODES_QUERY, {
       courseId,
     });
-    return response.nodes.data;
+    return response.nodes.data.map(normalizeNode);
   },
 
   async createNode(input: CreateNodeInput): Promise<CourseNode> {
@@ -84,7 +113,7 @@ export const nodeApi = {
       CREATE_NODE_MUTATION,
       { input },
     );
-    return response.createNode!.data;
+    return normalizeNode(response.createNode!.data);
   },
 
   async updateNode(id: string, input: UpdateNodeInput): Promise<CourseNode> {
@@ -92,7 +121,23 @@ export const nodeApi = {
       UPDATE_NODE_MUTATION,
       { id, input },
     );
-    return response.updateNode!.data;
+    return normalizeNode(response.updateNode!.data);
+  },
+
+  async updateNodeTags(id: string, tagIds: number[]): Promise<CourseNode> {
+    const response = await graphqlClient.request<NodeResponse>(
+      UPDATE_NODE_TAGS_MUTATION,
+      { id, tagIds },
+    );
+    return normalizeNode(response.updateNodeTags!.data);
+  },
+
+  async updateNodeSkills(id: string, skillIds: number[]): Promise<CourseNode> {
+    const response = await graphqlClient.request<NodeResponse>(
+      UPDATE_NODE_SKILLS_MUTATION,
+      { id, skillIds },
+    );
+    return normalizeNode(response.updateNodeSkills!.data);
   },
 
   async moveNode(id: string, input: MoveNodeInput): Promise<CourseNode> {
@@ -100,7 +145,7 @@ export const nodeApi = {
       MOVE_NODE_MUTATION,
       { id, input },
     );
-    return response.moveNode!.data;
+    return normalizeNode(response.moveNode!.data);
   },
 
   async deleteNode(id: string): Promise<void> {

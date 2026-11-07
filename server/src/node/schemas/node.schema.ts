@@ -1,4 +1,6 @@
 import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
+import { Skill } from '../../skill/schemas/skill.schema';
+import { Tag } from '../../tag/schemas/tag.schema';
 
 @ObjectType()
 export class CourseNode {
@@ -22,6 +24,12 @@ export class CourseNode {
 
   @Field(() => [CourseNode])
   children!: CourseNode[];
+
+  @Field(() => [Tag])
+  tags!: Tag[];
+
+  @Field(() => [Skill])
+  skills!: Skill[];
 
   @Field()
   createdAt!: Date;
